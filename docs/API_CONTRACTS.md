@@ -2,11 +2,11 @@
 
 ## Team Responsibilities
 
-| Module | Owner | Tech Stack |
-|--------|-------|------------|
-| `backend/` | Teammate | Python + FastAPI + Supabase |
+| Module | Owner | Notes |
+|--------|-------|-------|
+| `backend/` | Teammate | Uses Supabase for user data |
 | `rag/` | Us | Python + FastAPI + ChromaDB |
-| `frontend/` | TBD | React / Next.js |
+| `frontend/` | TBD | TBD |
 
 ---
 

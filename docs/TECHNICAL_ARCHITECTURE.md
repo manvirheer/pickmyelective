@@ -37,16 +37,20 @@ pickmyelective/
 
 ## Technology Decisions
 
+### RAG Service (Our Ownership)
 | Component | Choice | Rationale |
 |-----------|--------|-----------|
-| **Frontend** | React / Next.js | Fast to build |
-| **Backend** | Python + FastAPI | Team familiarity |
-| **RAG Service** | Python + FastAPI | Best ML ecosystem |
-| **User Database** | Supabase | Managed, free tier |
+| **Framework** | Python + FastAPI | Best ML ecosystem |
 | **Vector DB** | ChromaDB | Local, simple |
 | **Embeddings** | OpenAI `text-embedding-3-small` | Good quality, cheap |
 | **LLM** | Claude / GPT-4o-mini | Response generation |
-| **Email (OTP)** | Resend | Simple API, free tier |
+
+### Backend (Teammate's Ownership)
+| Component | Choice |
+|-----------|--------|
+| **User Database** | Supabase |
+| **Email (OTP)** | Resend |
+| **Framework** | Their choice |
 
 ---
 
