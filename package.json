@@ -1,0 +1,7 @@
+{
+  "name": "pickmyelective",
+  "packageManager": "yarn@4.11.0",
+  "devDependencies": {
+    "lefthook": "^2.0.13"
+  }
+}
