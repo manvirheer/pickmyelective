@@ -2,7 +2,7 @@ commit-msg:
   commands:
     validate-format:
       run: |
-        MSG=$(cat "$1")
+        MSG=$(cat "{1}")
         if ! echo "$MSG" | grep -qE "^(task|bug|docs|design|misc): .+"; then
           echo "❌ Invalid commit message format!"
           echo ""
