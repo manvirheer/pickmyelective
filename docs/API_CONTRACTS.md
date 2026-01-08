@@ -24,6 +24,35 @@
               └────────────┘
 ```
 
+### Why Frontend → Backend → RAG?
+
+Frontend **never** calls RAG directly. All requests go through Backend first.
+
+| Reason | Explanation |
+|--------|-------------|
+| **Authentication** | RAG doesn't know about users/tokens - Backend validates JWTs |
+| **Rate Limiting** | Backend enforces the 5-query limit per user |
+| **Security** | RAG is an internal service, not exposed publicly |
+| **Usage Tracking** | Backend tracks who queried what (stored in Supabase) |
+
+### Request Flow for Course Query
+
+```
+1. Frontend sends POST /api/query with JWT
+              ↓
+2. Backend validates JWT (is user authenticated?)
+              ↓
+3. Backend checks queries_remaining in Supabase
+              ↓
+4. If allowed → Backend proxies to RAG (POST /api/recommend)
+              ↓
+5. RAG returns course recommendations
+              ↓
+6. Backend decrements user's query count in Supabase
+              ↓
+7. Backend returns response + updated queries_remaining to Frontend
+```
+
 ---
 
 ## Backend APIs (Frontend-facing)
