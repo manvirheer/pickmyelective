@@ -4,8 +4,9 @@ A RAG-powered system to help SFU students discover and choose elective courses t
 
 ## Documentation
 
-- [Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)
-- [Data & RAG Pipeline](docs/DATA_RAG_PIPELINE.md)
+- [Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md) - System design, tech stack, data sources
+- [API Contracts](docs/API_CONTRACTS.md) - Endpoints, request/response formats, team responsibilities
+- [Data & RAG Pipeline](docs/DATA_RAG_PIPELINE.md) - Data processing, embeddings, query flow
 
 ## Getting Started
 
