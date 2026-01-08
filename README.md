@@ -7,6 +7,12 @@ A RAG-powered system to help SFU students discover and choose elective courses t
 - [Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)
 - [Data & RAG Pipeline](docs/DATA_RAG_PIPELINE.md)
 
+## Getting Started
+
+```bash
+yarn install
+```
+
 ## Development
 
 ### Commit Message Format
