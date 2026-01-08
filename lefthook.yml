@@ -15,3 +15,16 @@ commit-msg:
           echo "  docs: update README with setup instructions"
           exit 1
         fi
+
+pre-merge-commit:
+  commands:
+    prevent-merge:
+      run: |
+        echo "❌ Merge commits are not allowed!"
+        echo ""
+        echo "Please use rebase instead:"
+        echo "  git rebase <branch>"
+        echo ""
+        echo "Or configure git to rebase by default:"
+        echo "  git config pull.rebase true"
+        exit 1
