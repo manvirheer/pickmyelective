@@ -9,30 +9,149 @@ A RAG-powered conversational AI to help SFU students discover elective courses f
 
 ---
 
+## Monorepo Structure
+
+```
+pickmyelective/
+├── frontend/      # React UI (TBD)
+├── backend/       # Auth + API gateway [TEAMMATE]
+├── rag/           # RAG service [OUR FOCUS]
+└── docs/          # Documentation
+```
+
+## Team Responsibilities
+
+| Module | Owner | Tech Stack |
+|--------|-------|------------|
+| `backend/` | Teammate | Python + FastAPI + Supabase |
+| `rag/` | Us | Python + FastAPI + ChromaDB |
+| `frontend/` | TBD | React / Next.js |
+
+---
+
 ## System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      FRONTEND                                │
-│                   (Chat Interface)                           │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      BACKEND API                             │
-│            (Query Processing + RAG Pipeline)                 │
-├─────────────────────────────────────────────────────────────┤
-│  • Pre-filter by user constraints (campus, WQB, level)      │
-│  • Semantic search on course embeddings                      │
-│  • LLM response generation with retrieved context            │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    VECTOR DATABASE                           │
-│              (Pre-indexed course embeddings)                 │
-└─────────────────────────────────────────────────────────────┘
+┌──────────┐     ┌──────────┐     ┌──────────┐
+│ Frontend │────▶│ Backend  │────▶│   RAG    │
+└──────────┘     └────┬─────┘     └──────────┘
+                      │            (our focus)
+                      ▼
+              ┌────────────┐
+              │  Supabase  │
+              │  + Resend  │
+              └────────────┘
 ```
+
+### Service Responsibilities
+
+| Service | Responsibilities |
+|---------|------------------|
+| **Frontend** | Chat UI, auth flow, display recommendations |
+| **Backend** | Auth (OTP via Resend), rate limiting (5/lifetime), proxy to RAG |
+| **RAG** | Semantic search, query interpretation, match explanations |
+
+---
+
+## Architecture Decisions
+
+| Decision | Choice | Owner |
+|----------|--------|-------|
+| Rate limiting | Lifetime (5 queries per user) | Backend |
+| Service communication | REST API | Both |
+| Email provider | Resend | Backend |
+| User Database | Supabase | Backend |
+| Vector DB | ChromaDB | RAG |
+| Embeddings | OpenAI `text-embedding-3-small` | RAG |
+| LLM | Claude/GPT-4o-mini | RAG |
+
+---
+
+## API Contracts
+
+### Backend → RAG (Internal API)
+
+**Endpoint:** `POST /api/recommend`
+
+**Request:**
+```json
+{
+  "query": "I'm interested in understanding how people think and make decisions",
+  "filters": {
+    "campus": ["Burnaby", "Surrey"],
+    "wqb": ["B-Hum", "B-Soc"],
+    "max_level": 200,
+    "no_prerequisites": true
+  },
+  "top_k": 5
+}
+```
+
+**Note:** No `department` filter - RAG uses semantic search to find relevant departments.
+
+**Response:**
+```json
+{
+  "success": true,
+  "query_interpretation": "Looking for courses about cognitive science, psychology, and decision-making at Burnaby/Surrey that fulfill breadth requirements with no prerequisites",
+  "courses": [
+    {
+      "course_code": "PSYC 100",
+      "section": "D100",
+      "title": "Introduction to Psychology I",
+      "description": "Acquaints the student with major issues...",
+      "campus": "Burnaby",
+      "wqb": ["B-Soc"],
+      "units": 3,
+      "prerequisites": "",
+      "instructor": "Dr. Smith",
+      "schedule": "Tu/Th 10:30-12:20",
+      "relevance_score": 0.92,
+      "match_reason": "Covers human behavior, cognition, and decision-making processes - directly matches your interest in understanding how people think"
+    }
+  ]
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "No courses match your interests with the given constraints."
+}
+```
+
+### Backend Public APIs (Frontend-facing)
+
+```
+POST /auth/request-otp
+  Body: { email: "user@sfu.ca" }
+  Response: { success: true, message: "OTP sent" }
+
+POST /auth/verify-otp
+  Body: { email: "user@sfu.ca", code: "123456" }
+  Response: { token: "jwt...", user: { email, queries_remaining: 5 } }
+
+POST /api/query
+  Headers: Authorization: Bearer <jwt>
+  Body: { query: "...", filters: {...} }
+  Response: { courses: [...], queries_remaining: 4 }
+
+GET /api/user
+  Headers: Authorization: Bearer <jwt>
+  Response: { email, queries_remaining, created_at }
+```
+
+---
+
+## Filter Options
+
+| Filter | Type | Values |
+|--------|------|--------|
+| `campus` | array | `["Burnaby", "Surrey", "Vancouver", "Online"]` |
+| `wqb` | array | `["W", "Q", "B-Sci", "B-Soc", "B-Hum"]` |
+| `max_level` | int | `100`, `200`, `300`, `400` |
+| `no_prerequisites` | bool | `true`/`false` |
 
 ---
 
@@ -43,7 +162,6 @@ A RAG-powered conversational AI to help SFU students discover elective courses f
 - **Base URL:** `http://www.sfu.ca/bin/wcm/course-outlines`
 - **Auth:** None required
 - **Rate Limits:** Not documented
-- **Data Available:** 2014-2026
 
 | Endpoint | Returns |
 |----------|---------|
@@ -52,179 +170,62 @@ A RAG-powered conversational AI to help SFU students discover elective courses f
 | `?{year}/{term}/{dept}` | Courses with titles |
 | `?{year}/{term}/{dept}/{num}/{section}` | Full course outline |
 
-**Rich Fields:** description, prerequisites, corequisites, instructor, schedule, campus, WQB designation, units, delivery method
-
-**Example Request:**
+**Example:**
 ```bash
 curl "http://www.sfu.ca/bin/wcm/course-outlines?2026/summer/cmpt/120/d100"
 ```
 
-### 2. CourSys API (SFU CS Department)
+### 2. CourSys API (SFU CS)
 
-- **Base URL:** `https://coursys.sfu.ca/browse/`
-- **Auth:** None required (public browse)
-- **Key Param:** `?tabledata=yes` returns JSON
+- **Base URL:** `https://coursys.sfu.ca/browse/?tabledata=yes`
+- **Auth:** None required
 
 | Filter | Parameter | Example |
 |--------|-----------|---------|
 | Semester | `semester[]=1264` | Summer 2026 |
 | Subject | `subject[]=CMPT` | Computing Science |
 | Campus | `campus[]=BRNBY` | Burnaby |
-| Campus | `campus[]=SURRY` | Surrey |
-| Campus | `campus[]=OFFST` | Off-campus/Online |
 
-**Unique Data:** Real-time enrollment counts (e.g., "45/200"), section-level details
-
-**Example Request:**
-```bash
-curl "https://coursys.sfu.ca/browse/?semester%5B%5D=1264&subject%5B%5D=CMPT&tabledata=yes"
-```
-
-**Course Info Endpoint:**
-```bash
-curl "https://coursys.sfu.ca/browse/info/2026su-cmpt-120-d1?data=yes"
-# Returns: {"component": "LEC", "longtitle": "...", "descrlong": "..."}
-```
-
-### Semester Codes (CourSys)
-
-| Code | Semester |
-|------|----------|
-| 1261 | Spring 2026 |
-| 1264 | Summer 2026 |
-| 1267 | Fall 2026 |
-
-Formula: `1` + `YY` + `term` where term: 1=Spring, 4=Summer, 7=Fall
+**Semester Codes:** `1261` = Spring 2026, `1264` = Summer 2026, `1267` = Fall 2026
 
 ---
 
-## Data Availability (as of Jan 2026)
+## Data Availability (Jan 2026)
 
-| Semester | SFU Outlines API | CourSys | Recommendation |
-|----------|------------------|---------|----------------|
-| Spring 2026 | Full data | Full data | Available |
-| Summer 2026 | Partial (some nulls) | Full data | **Primary Target** |
-| Fall 2026 | Not available | Not available | Wait for release |
+| Semester | Status | Recommendation |
+|----------|--------|----------------|
+| Spring 2026 | Full data | Available |
+| Summer 2026 | Full data | **Primary Target** |
+| Fall 2026 | Not available | Wait for release |
 
-**Summer 2026 Stats:**
-- Total sections: 2,101
-- Burnaby campus: 1,139
-- Surrey campus: 158
-- Off-campus: varies
+**Summer 2026:** ~2,100 sections, 1,139 Burnaby, 158 Surrey
 
 ---
 
-## Tech Stack (Proposed)
+## Design Decisions
 
-| Layer | Technology | Rationale |
-|-------|------------|-----------|
-| **Frontend** | React / Next.js | Fast to build, team familiarity |
-| **Backend** | Python (FastAPI) | Best RAG/ML ecosystem |
-| **Vector DB** | ChromaDB | Local, free, simple setup |
-| **Embeddings** | OpenAI `text-embedding-3-small` | Good quality, cheap ($0.02/1M tokens) |
-| **LLM** | Claude API or GPT-4o-mini | Response generation |
-| **Hosting** | Vercel (FE) + Railway (BE) | Free tiers available |
-
-### Alternatives Considered
-
-| Component | Alternative | Tradeoff |
-|-----------|-------------|----------|
-| Vector DB | Pinecone | Managed but adds complexity |
-| Embeddings | `all-MiniLM-L6-v2` (local) | Free but lower quality |
-| LLM | Groq (Llama) | Very fast, free tier, less capable |
-| LLM | Ollama (local) | No API costs, needs good hardware |
+| Aspect | Decision | Rationale |
+|--------|----------|-----------|
+| Query style | Natural language | Users describe interests, not filters |
+| Department filter | Removed | Semantic search finds relevant depts |
+| Conversation | Single-shot | Simpler for hackathon |
+| Explanations | Yes (`match_reason`) | Users understand why courses were picked |
+| Interpretation | Yes (`query_interpretation`) | User sees what system understood |
 
 ---
 
 ## Hackathon Constraints
 
-| Constraint | Impact | Mitigation |
-|------------|--------|------------|
-| 12 hours total | Very limited build time | Pre-fetch data, pre-compute embeddings before event |
-| Demo-focused judging | Need polished happy path | Script 5 great demo queries that work perfectly |
-| Beginner-friendly event | Keep it accessible | Minimal dependencies, clear code structure |
-| 4-minute presentation | Must show value quickly | Prepare compelling demo flow |
-
----
-
-## MVP Scope
-
-### In Scope (Must Have)
-- [ ] Chat interface for course queries
-- [ ] Filter by: campus, WQB designation, course level
-- [ ] Semantic search on course descriptions
-- [ ] Natural language course recommendations
-- [ ] Show course details (prereqs, schedule, instructor)
-
-### Nice to Have
-- [ ] Save/bookmark courses
-- [ ] Compare courses side-by-side
-- [ ] Schedule visualization
-
-### Out of Scope (v1)
-- Professor reviews/ratings (RateMyProf)
-- Real-time seat availability checking
-- Schedule conflict detection
-- User accounts/authentication
-- Course history/taken courses tracking
-
----
-
-## API Response Examples
-
-### SFU Outlines - Full Course Data
-```json
-{
-  "info": {
-    "title": "Introduction to Computing Science and Programming I",
-    "description": "An elementary introduction to computing science...",
-    "prerequisites": "BC Math 12 or equivalent is recommended.",
-    "corequisites": "",
-    "units": "3",
-    "designation": "Quantitative/Breadth-Science",
-    "deliveryMethod": "In Person",
-    "degreeLevel": "UGRD"
-  },
-  "instructor": [{
-    "name": "Diana Cukierman",
-    "email": "diana@sfu.ca"
-  }],
-  "courseSchedule": [{
-    "campus": "Burnaby",
-    "days": "Tu",
-    "startTime": "12:30",
-    "endTime": "14:20"
-  }]
-}
-```
-
-### CourSys - Course List
-```json
-{
-  "recordsFiltered": 134,
-  "data": [
-    ["Summer 2026", "<a href='...'>CMPT 120 D100</a>", "Intro.Cmpt.Sci/Programming I", "0/200", "Cukierman, Diana", "Burnaby"],
-    ["Summer 2026", "<a href='...'>CMPT 120 D200</a>", "Intro.Cmpt.Sci/Programming I", "0/200", "Khangura, Harinder", "Surrey"]
-  ]
-}
-```
-
----
-
-## Open Questions
-
-- [ ] Which LLM provider? (Claude vs GPT vs Groq - cost/quality tradeoff)
-- [ ] Pre-fetch all data before hackathon, or build live fetcher?
-- [ ] How much UI polish vs backend intelligence?
-- [ ] Team role split: who does frontend vs backend vs data?
+| Constraint | Mitigation |
+|------------|------------|
+| 12 hours | Pre-fetch data, pre-compute embeddings |
+| Demo-focused | Script 5 great demo queries |
+| 4-minute presentation | Prepare compelling demo flow |
 
 ---
 
 ## References
 
-- [SFU Course Outlines API Documentation](https://www.sfu.ca/outlines/help/api.html)
-- [SFU Course Outlines Portal](https://www.sfu.ca/outlines.html)
+- [SFU Course Outlines API](https://www.sfu.ca/outlines/help/api.html)
 - [CourSys Browse](https://coursys.sfu.ca/browse/)
 - [JourneyHacks 2025 Devpost](https://journeyhacks-2025.devpost.com/)
-- [sfucourses-api (third-party)](https://github.com/brianrahadi/sfucourses-api)
-- [SFU Academic Calendar](https://www.sfu.ca/students/calendar/2026/summer/courses.html)

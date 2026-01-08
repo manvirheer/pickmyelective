@@ -426,65 +426,154 @@ def generate_keywords(course: dict) -> list[str]:
 }
 ```
 
-### Query Strategy: Hybrid Search
+### Query Strategy: Semantic-First with LLM Enhancement
 
-Combine **metadata filtering** with **semantic search**:
+Users describe interests in natural language. The RAG system interprets intent and explains recommendations.
+
+**Design Philosophy:**
+- **Semantic-first**: No rigid department filters, let embeddings find relevant courses
+- **Explainable**: Every recommendation has a human-readable reason
+- **Transparent**: User sees what the system understood
+
+---
+
+## RAG Query Flow (Runtime)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  INPUT: query + filters                                         │
+│  "interested in how people think" + {campus: Burnaby, wqb: ...} │
+└─────────────────────────────┬───────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 1: Query Interpretation (LLM Call #1)                     │
+│  ─────────────────────────────────────────                      │
+│  Input:  Raw user query                                         │
+│  Prompt: "Extract the topics and interests from this query..."  │
+│  Output: {                                                      │
+│    "topics": ["cognitive science", "psychology", "behavior"],   │
+│    "interpretation": "Looking for courses about how the mind    │
+│                       works and decision-making processes"      │
+│  }                                                              │
+└─────────────────────────────┬───────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 2: Embed Interpreted Query                                │
+│  ─────────────────────────────────────────                      │
+│  Model: text-embedding-3-small                                  │
+│  Input: "cognitive science psychology behavior decision-making" │
+│  Output: [0.023, -0.089, 0.156, ...] (1536 dims)               │
+└─────────────────────────────┬───────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 3: Vector Search with Metadata Filtering                  │
+│  ─────────────────────────────────────────                      │
+│  Database: ChromaDB                                             │
+│  Filters: campus IN [Burnaby], wqb CONTAINS [B-Soc], etc.      │
+│  Search:  Cosine similarity on embeddings                       │
+│  Output:  Top 10 candidate courses                              │
+└─────────────────────────────┬───────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 4: Generate Match Reasons (LLM Call #2)                   │
+│  ─────────────────────────────────────────                      │
+│  For each course in top 5:                                      │
+│  Input:  User query + course title + course description         │
+│  Prompt: "Explain why this course matches the user's interest"  │
+│  Output: "Covers human behavior and cognition - directly        │
+│           matches your interest in understanding how people     │
+│           think and make decisions"                             │
+└─────────────────────────────┬───────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  OUTPUT: Structured response                                    │
+│  {                                                              │
+│    "query_interpretation": "...",                               │
+│    "courses": [{ ..., "match_reason": "..." }, ...]            │
+│  }                                                              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### LLM Usage Summary
+
+| Step | Purpose | Input | Output |
+|------|---------|-------|--------|
+| 1 | Interpretation | User's raw query | Topics + interpretation text |
+| 4 | Explanation | Query + each course | Match reason per course |
+
+**Cost estimate per request:**
+- Interpretation: ~200 tokens in, ~100 tokens out
+- Explanation (5 courses): ~500 tokens in, ~250 tokens out
+- Total: ~1000 tokens ≈ $0.002 per query (GPT-4o-mini)
+
+### Implementation
 
 ```python
-def search_electives(
+async def recommend_courses(
     query: str,
-    campus: list[str] = None,
-    wqb: list[str] = None,
-    max_level: int = None,
-    no_prereqs: bool = False,
-    top_k: int = 10
-) -> list[dict]:
-    """Search for electives using hybrid approach."""
+    filters: dict,
+    top_k: int = 5
+) -> dict:
+    """Main recommendation function with LLM enhancement."""
 
-    # 1. Build metadata filter
-    where_filter = {}
+    # Step 1: Interpret query with LLM
+    interpretation = await interpret_query(query)
 
-    if campus:
-        where_filter["campus"] = {"$in": campus}
+    # Step 2: Embed the interpreted topics
+    search_text = " ".join(interpretation["topics"])
+    query_embedding = embed_text(search_text)
 
-    if wqb:
-        # Course must have at least one of the requested WQB
-        where_filter["wqb"] = {"$contains_any": wqb}
-
-    if max_level:
-        where_filter["level"] = {"$lte": max_level}
-
-    if no_prereqs:
-        where_filter["has_prerequisites"] = {"$eq": False}
-
-    # 2. Generate query embedding
-    query_embedding = embed_text(query)
-
-    # 3. Semantic search with filter
-    results = vector_db.query(
+    # Step 3: Vector search with metadata filters
+    where_filter = build_filters(filters)
+    candidates = vector_db.query(
         query_embeddings=[query_embedding],
         where=where_filter,
-        n_results=top_k * 2,  # Over-fetch for re-ranking
-        include=["documents", "metadatas", "distances"]
+        n_results=top_k * 2
     )
 
-    # 4. Re-rank by elective score
-    scored_results = []
-    for doc, meta, dist in zip(results['documents'][0],
-                                results['metadatas'][0],
-                                results['distances'][0]):
-        scored_results.append({
-            "document": doc,
-            "metadata": meta,
-            "semantic_score": 1 - dist,  # Convert distance to similarity
-            "elective_score": meta.get("elective_score", 0),
-            "combined_score": (1 - dist) * 0.7 + (meta.get("elective_score", 0) / 30) * 0.3
-        })
+    # Step 4: Generate match reasons for top results
+    top_courses = candidates[:top_k]
+    for course in top_courses:
+        course["match_reason"] = await generate_match_reason(
+            query, course
+        )
 
-    # 5. Sort by combined score and return top_k
-    scored_results.sort(key=lambda x: x["combined_score"], reverse=True)
-    return scored_results[:top_k]
-```
+    return {
+        "success": True,
+        "query_interpretation": interpretation["interpretation"],
+        "courses": top_courses
+    }
+
+
+async def interpret_query(query: str) -> dict:
+    """LLM Call #1: Extract topics and interpretation."""
+    prompt = f"""
+    Extract the main topics and interests from this course search query.
+
+    Query: "{query}"
+
+    Return JSON:
+    {{
+        "topics": ["topic1", "topic2", ...],
+        "interpretation": "One sentence describing what the user is looking for"
+    }}
+    """
+    return await llm_call(prompt)
+
+
+async def generate_match_reason(query: str, course: dict) -> str:
+    """LLM Call #2: Explain why course matches."""
+    prompt = f"""
+    The user is looking for: "{query}"
+
+    Explain in 1-2 sentences why this course is a good match:
+
+    Course: {course["title"]}
+    Description: {course["description"][:300]}
+
+    Be specific about how the course content relates to their interest.
+    """
+    return await llm_call(prompt)
 
 ---
 
