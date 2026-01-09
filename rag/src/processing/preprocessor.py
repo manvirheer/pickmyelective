@@ -165,6 +165,10 @@ def check_exclusion(course: ProcessedCourse) -> ExclusionReason | None:
     if course.level >= 600:
         return ExclusionReason.GRADUATE
 
+    # 400-level (too advanced for general electives)
+    if course.level >= 400:
+        return ExclusionReason.UPPER_DIVISION
+
     # No description
     if not course.description.strip():
         return ExclusionReason.NO_DESCRIPTION
@@ -190,9 +194,9 @@ def calculate_elective_score(course: ProcessedCourse) -> int:
     """
     score = 0
 
-    # No prerequisites = accessible to anyone (+10)
+    # No prerequisites = accessible to anyone (+5)
     if not course.has_prerequisites:
-        score += 10
+        score += 5
 
     # WQB designation = fulfills graduation requirements (+5 per)
     score += 5 * len(course.wqb)
@@ -202,8 +206,7 @@ def calculate_elective_score(course: ProcessedCourse) -> int:
         score += 5
     elif course.level == 200:
         score += 3
-    elif course.level == 300:
-        score += 1
+    # 300-level: no bonus
 
     # Large capacity = easier to get a seat
     if course.total_capacity >= 200:
@@ -418,6 +421,8 @@ class CoursePreprocessor:
         """Increment exclusion counter."""
         if reason == ExclusionReason.GRADUATE:
             self.stats.excluded_graduate += 1
+        elif reason == ExclusionReason.UPPER_DIVISION:
+            self.stats.excluded_upper_division += 1
         elif reason == ExclusionReason.NO_DESCRIPTION:
             self.stats.excluded_no_description += 1
         elif reason == ExclusionReason.COOP:
@@ -482,6 +487,7 @@ class CoursePreprocessor:
 
         console.print(f"\n[bold]Exclusions:[/bold]")
         console.print(f"  Graduate (600+):      {s.excluded_graduate}")
+        console.print(f"  Upper div (400+):     {s.excluded_upper_division}")
         console.print(f"  No description:       {s.excluded_no_description}")
         console.print(f"  Co-op:                {s.excluded_coop}")
         console.print(f"  Practicum:            {s.excluded_practicum}")

@@ -206,16 +206,118 @@ rag/
 
 ---
 
-## Upcoming
+## [0.3.0] - 2026-01-09
 
-### Stage 3: Embedding & Indexing
-- [ ] Document transformation for RAG
-- [ ] OpenAI embedding generation
-- [ ] ChromaDB setup and indexing
+### Added
 
-### Stage 4: Query Engine
-- [ ] FastAPI endpoints
-- [ ] Query interpretation with LLM
-- [ ] Vector search with metadata filtering
-- [ ] Department exclusion filter
-- [ ] Match reason generation
+**Data Pipeline - Stage 3: Transform**
+
+- Created transform module (`src/transform/`)
+  - `models.py` - TransformedCourse, CourseMetadata schemas
+  - `transformer.py` - Document formatting, LLM keyword generation
+- Implemented document preparation for embedding
+  - Structured format: code, title, metadata, description, keywords
+  - Optimized for semantic search
+- Implemented LLM keyword generation
+  - Uses GPT-4o-mini to generate 5-8 semantic keywords per course
+  - Rate limiting and retry logic for API calls
+  - Checkpoint system for resumability
+- Created CLI script (`scripts/transform_courses.py`)
+
+**Data Pipeline - Stage 4: Index**
+
+- Created index module (`src/index/`)
+  - `models.py` - IndexingConfig, IndexOutput schemas
+  - `indexer.py` - Embedding generation, ChromaDB indexing
+- Implemented OpenAI embedding generation
+  - Model: text-embedding-3-large (3,072 dimensions)
+  - Batch processing with rate limiting
+- Implemented ChromaDB vector storage
+  - Persistent storage in `data/chroma/`
+  - Cosine similarity distance metric
+  - Metadata stored as flat strings for filtering
+- Created CLI script (`scripts/index_courses.py`)
+
+**Data Pipeline - Stage 5: Query API**
+
+- Created query module (`src/query/`)
+  - `models.py` - RecommendRequest, RecommendResponse, CourseResult
+  - `engine.py` - RAG query pipeline
+- Implemented query interpretation
+  - LLM extracts topics and intent from natural language
+- Implemented semantic search
+  - Vector similarity search with ChromaDB
+  - Post-filtering for campus and WQB
+- Implemented match reason generation
+  - LLM explains why each course matches the query
+- Created FastAPI application (`src/api/`)
+  - `main.py` - App setup with lifespan management
+  - `routes.py` - `/health` and `/api/recommend` endpoints
+  - `dependencies.py` - Query engine dependency injection
+- Created server script (`scripts/run_server.py`)
+
+### Transform & Index Statistics (Summer 2026)
+
+```
+Transformed:         391 courses
+Avg document length: 695 chars
+Avg keywords/course: 8
+LLM calls:          391
+Total tokens:       81,151
+
+Indexed:            391 courses
+Embedding model:    text-embedding-3-large
+Dimensions:         3,072
+Distance metric:    cosine
+```
+
+### Files Created
+
+```
+rag/
+├── src/
+│   ├── transform/
+│   │   ├── __init__.py
+│   │   ├── models.py
+│   │   └── transformer.py
+│   ├── index/
+│   │   ├── __init__.py
+│   │   ├── models.py
+│   │   └── indexer.py
+│   ├── query/
+│   │   ├── __init__.py
+│   │   ├── models.py
+│   │   └── engine.py
+│   └── api/
+│       ├── __init__.py
+│       ├── main.py
+│       ├── routes.py
+│       └── dependencies.py
+├── scripts/
+│   ├── transform_courses.py
+│   ├── index_courses.py
+│   └── run_server.py
+└── data/
+    ├── transformed/
+    └── chroma/
+```
+
+---
+
+## [0.3.1] - 2026-01-09
+
+### Improved
+
+**Query Quality Enhancements**
+
+- Enhanced query interpretation prompt
+  - Added recognition for common patterns: "easy", "breadth", "no prereqs"
+  - More examples for better topic extraction
+- Improved fetch multiplier for filtered queries
+  - Heavy filtering (list + scalar): 5x candidates
+  - Moderate filtering: 3x candidates
+  - Ensures sufficient results after post-filtering
+- Added minimum relevance threshold
+  - New `min_relevance` parameter (default: 0.35)
+  - Filters out low-relevance matches before generating match reasons
+  - Reduces noise in results

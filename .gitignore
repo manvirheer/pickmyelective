@@ -32,3 +32,8 @@ ENV/
 
 # RAG data (fetched course data)
 rag/data/
+
+# Environment files
+.env
+.env.local
+*.env

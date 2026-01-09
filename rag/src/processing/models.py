@@ -24,6 +24,7 @@ class PrerequisiteLevel(str, Enum):
 class ExclusionReason(str, Enum):
     """Reason a course was excluded."""
     GRADUATE = "graduate"
+    UPPER_DIVISION = "upper_division"
     NO_DESCRIPTION = "no_description"
     COOP = "coop"
     PRACTICUM = "practicum"
@@ -85,6 +86,7 @@ class ProcessingStats(BaseModel):
 
     # Filtering
     excluded_graduate: int = 0
+    excluded_upper_division: int = 0
     excluded_no_description: int = 0
     excluded_coop: int = 0
     excluded_practicum: int = 0

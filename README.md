@@ -7,11 +7,48 @@ A RAG-powered system to help SFU students discover and choose elective courses t
 - [Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md) - System design, tech stack, data sources
 - [API Contracts](docs/API_CONTRACTS.md) - Endpoints, request/response formats, team responsibilities
 - [Data & RAG Pipeline](docs/DATA_RAG_PIPELINE.md) - Data processing, embeddings, query flow
+- [RAG Changelog](rag/CHANGELOG.md) - Detailed development progress
+
+## Project Structure
+
+```
+pickmyelective/
+├── frontend/          # React UI (coming soon)
+├── rag/               # RAG service (Python + FastAPI + ChromaDB)
+│   ├── src/           # Source code
+│   ├── scripts/       # CLI tools
+│   └── data/          # Data files (gitignored)
+└── docs/              # Documentation
+```
 
 ## Getting Started
 
+### RAG Service
+
 ```bash
-yarn install
+cd rag
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -e .
+
+# Set up environment
+cp .env.example .env
+# Edit .env and add your OPENAI_API_KEY
+
+# Run the server
+python scripts/run_server.py
+```
+
+The API will be available at `http://localhost:8000`. Test it:
+
+```bash
+curl -X POST http://localhost:8000/api/recommend \
+  -H "Content-Type: application/json" \
+  -d '{"query": "easy breadth course", "top_k": 5}'
 ```
 
 ## Development
