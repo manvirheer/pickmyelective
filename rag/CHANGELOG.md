@@ -112,15 +112,101 @@ rag/
 
 ---
 
-## Upcoming
+## [0.2.0] - 2026-01-08
 
-### Stage 2: Preprocess & Filter
-- [ ] HTML cleaning and text normalization
-- [ ] WQB designation parsing into structured codes
-- [ ] Prerequisite analysis (has_prerequisites boolean)
-- [ ] Course level extraction
-- [ ] Apply exclusion filters (graduate, co-op, thesis, etc.)
-- [ ] Calculate elective-friendliness scores
+### Added
+
+**Data Pipeline - Stage 2: Preprocess & Filter**
+
+- Created processing module (`src/processing/`)
+  - `models.py` - ProcessedCourse, WQBCode enum, PrerequisiteLevel enum, ExclusionReason enum
+  - `preprocessor.py` - Main preprocessing pipeline
+- Implemented section deduplication
+  - Merges multiple sections (D100, D200, etc.) into single course
+  - Keeps best description (longest)
+  - Aggregates: campuses, delivery methods, instructors, total capacity
+  - 2,101 sections → 1,139 unique courses
+- Implemented text cleaning
+  - HTML tag removal
+  - HTML entity decoding
+  - Whitespace normalization
+- Implemented WQB parsing
+  - Parses designation strings into structured codes: Q, W, B-Sci, B-Soc, B-Hum
+- Implemented prerequisite analysis
+  - Classifies into: NONE, RECOMMENDED, REQUIRED
+  - Detects course code references (e.g., "CMPT 120")
+  - Detects unit requirements (e.g., "60 units")
+- Implemented exclusion filters
+  - Graduate courses (600+ level)
+  - No description
+  - Co-op, Practicum, Thesis, Directed Studies, Capstone, Special Topics, Honours, Project courses
+- Implemented elective scoring algorithm
+  - No prerequisites: +10
+  - WQB designation: +5 each
+  - 100-level: +5, 200-level: +3, 300-level: +1
+  - Large capacity (200+): +3, (100+): +2, (50+): +1
+  - Has instructor: +1
+  - Multiple delivery/campuses: +1 each
+- Added department list for frontend filtering UI
+  - 57 departments with elective courses
+  - Enables "exclude my department" feature
+- Created CLI script (`scripts/preprocess_courses.py`)
+
+### Processing Statistics (Summer 2026)
+
+```
+Input:
+  Total sections:       2,101
+
+Deduplication:
+  Unique courses:       1,139
+  Multi-section:          451
+
+Exclusions:
+  Graduate (600+):        392
+  Practicum:               60
+  Directed Studies:        30
+  No description:          19
+  Co-op:                   15
+  Thesis:                  15
+  Other:                   20
+  Total excluded:         551
+
+Output:
+  Elective candidates:    588
+  With WQB:               194 (33.0%)
+  No prerequisites:       107 (18.2%)
+  Departments:             57
+```
+
+### Top Electives by Score
+
+| Course | Score | WQB | Prereq | Capacity |
+|--------|-------|-----|--------|----------|
+| CMPT 120 | 30 | Q, B-Sci | No | 400 |
+| EDUC 100W | 30 | W, B-Hum | No | 300 |
+| ENGL 112W | 28 | W, B-Hum | No | 136 |
+| PHIL 100W | 28 | W, B-Hum | No | 140 |
+| STAT 100 | 28 | Q, B-Sci | No | 105 |
+
+### Files Created
+
+```
+rag/
+├── src/
+│   └── processing/
+│       ├── __init__.py
+│       ├── models.py           # ProcessedCourse, enums
+│       └── preprocessor.py     # Main pipeline
+├── scripts/
+│   └── preprocess_courses.py   # CLI
+└── data/processed/             # Output (gitignored)
+    └── electives_1264.json     # 588 electives
+```
+
+---
+
+## Upcoming
 
 ### Stage 3: Embedding & Indexing
 - [ ] Document transformation for RAG
@@ -131,4 +217,5 @@ rag/
 - [ ] FastAPI endpoints
 - [ ] Query interpretation with LLM
 - [ ] Vector search with metadata filtering
+- [ ] Department exclusion filter
 - [ ] Match reason generation
