@@ -26,15 +26,20 @@ async def lifespan(app: FastAPI):
     )
     collection_name = os.getenv("COLLECTION_NAME", "courses_1264")
     openai_api_key = os.getenv("OPENAI_API_KEY")
+    google_api_key = os.getenv("GOOGLE_API_KEY")
 
     if not openai_api_key:
         raise RuntimeError("OPENAI_API_KEY environment variable is required")
+
+    if not google_api_key:
+        raise RuntimeError("GOOGLE_API_KEY environment variable is required")
 
     # Initialize query engine
     engine = QueryEngine(
         chroma_path=chroma_path,
         collection_name=collection_name,
         openai_api_key=openai_api_key,
+        google_api_key=google_api_key,
     )
     set_query_engine(engine)
 

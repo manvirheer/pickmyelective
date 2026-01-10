@@ -5,6 +5,8 @@ from pathlib import Path
 
 import chromadb
 from chromadb.config import Settings
+from google import genai
+from google.genai import types
 from openai import AsyncOpenAI
 
 from .models import (
@@ -63,7 +65,8 @@ class QueryEngine:
         chroma_path: Path,
         collection_name: str,
         openai_api_key: str | None = None,
-        llm_model: str = "gpt-4o-mini",
+        google_api_key: str | None = None,
+        llm_model: str = "gemini-2.0-flash",
         embedding_model: str = "text-embedding-3-large",
     ):
         """Initialize the query engine.
@@ -71,16 +74,22 @@ class QueryEngine:
         Args:
             chroma_path: Path to ChromaDB persistent storage
             collection_name: Name of the collection to query
-            openai_api_key: OpenAI API key (uses env var if not provided)
-            llm_model: Model for query interpretation and match reasons
-            embedding_model: Model for generating query embeddings
+            openai_api_key: OpenAI API key for embeddings (uses env var if not provided)
+            google_api_key: Google API key for Gemini (uses env var if not provided)
+            llm_model: Gemini model for query interpretation and match reasons
+            embedding_model: OpenAI model for generating query embeddings
         """
         self.llm_model = llm_model
         self.embedding_model = embedding_model
 
-        # Initialize OpenAI client
+        # Initialize OpenAI client (for embeddings only)
         self.openai = (
             AsyncOpenAI(api_key=openai_api_key) if openai_api_key else AsyncOpenAI()
+        )
+
+        # Initialize Gemini client (for chat completions)
+        self.gemini = (
+            genai.Client(api_key=google_api_key) if google_api_key else genai.Client()
         )
 
         # Initialize ChromaDB client
@@ -96,14 +105,16 @@ class QueryEngine:
         """LLM Call #1: Extract topics and interpretation from user query."""
         prompt = INTERPRET_PROMPT.format(query=query)
 
-        response = await self.openai.chat.completions.create(
+        response = await self.gemini.aio.models.generate_content(
             model=self.llm_model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
-            temperature=0.2,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                max_output_tokens=200,
+                temperature=0.2,
+            ),
         )
 
-        content = response.choices[0].message.content or "{}"
+        content = response.text or "{}"
 
         # Parse JSON response
         try:
@@ -273,14 +284,16 @@ class QueryEngine:
             description=desc_truncated,
         )
 
-        response = await self.openai.chat.completions.create(
+        response = await self.gemini.aio.models.generate_content(
             model=self.llm_model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=100,
-            temperature=0.5,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                max_output_tokens=100,
+                temperature=0.5,
+            ),
         )
 
-        return response.choices[0].message.content or "Matches your search interests."
+        return response.text or "Matches your search interests."
 
     async def recommend(
         self,

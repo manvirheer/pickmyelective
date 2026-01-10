@@ -165,11 +165,11 @@ class MockChromaCollection:
 
 
 class MockQueryEngine:
-    """Mock QueryEngine for testing without real OpenAI/ChromaDB calls."""
+    """Mock QueryEngine for testing without real OpenAI/Gemini/ChromaDB calls."""
 
     def __init__(self, courses: list[dict] | None = None):
         self.collection = MockChromaCollection(courses)
-        self.llm_model = "gpt-4o-mini"
+        self.llm_model = "gemini-2.0-flash"
         self.embedding_model = "text-embedding-3-large"
 
     async def interpret_query(self, query: str):
