@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.AuthResponse;
 import com.example.demo.service.AuthService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -11,7 +13,6 @@ public class AuthController {
 
     private final AuthService authService;
 
-    // Constructor Injection
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
@@ -20,12 +21,30 @@ public class AuthController {
     // POST http://localhost:8080/auth/login
     // Body: { "email": "student@sfu.ca" }
     @PostMapping("/login")
-    public String login(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> request) {
         String email = request.get("email");
+
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Email is required"
+            ));
+        }
+
         try {
-            return authService.sendOtp(email);
+            String result = authService.sendOtp(email);
+            boolean success = result.contains("successfully");
+
+            return ResponseEntity.ok(Map.of(
+                "success", success,
+                "message", result,
+                "email", email.trim().toLowerCase()
+            ));
         } catch (IllegalArgumentException e) {
-            return "Error: " + e.getMessage();
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
         }
     }
 
@@ -33,16 +52,24 @@ public class AuthController {
     // POST http://localhost:8080/auth/verify
     // Body: { "email": "student@sfu.ca", "otp": "123456" }
     @PostMapping("/verify")
-    public String verify(@RequestBody Map<String, String> request) {
+    public ResponseEntity<AuthResponse> verify(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         String otp = request.get("otp");
 
-        boolean isValid = authService.verifyOtp(email, otp);
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new AuthResponse(false, "Email is required"));
+        }
 
-        if (isValid) {
-            return "Authentication Successful! Welcome.";
+        if (otp == null || otp.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new AuthResponse(false, "OTP is required"));
+        }
+
+        AuthResponse response = authService.verifyOtp(email, otp);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
         } else {
-            return "Invalid or Expired OTP.";
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }
