@@ -1,0 +1,16 @@
+#root {
+  width: 100vw;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-image: url("./assets/BackgroundImageLong.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.app-container {
+  width: 100%;
+  min-height: 100vh;
+}
