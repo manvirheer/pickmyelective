@@ -1,0 +1,30 @@
+commit-msg:
+  commands:
+    validate-format:
+      run: |
+        MSG=$(cat "{1}")
+        if ! echo "$MSG" | grep -qE "^(task|bug|docs|design|misc): .+"; then
+          echo "❌ Invalid commit message format!"
+          echo ""
+          echo "Expected: <type>: <message>"
+          echo "Types: task, bug, docs, design, misc"
+          echo ""
+          echo "Examples:"
+          echo "  task: add user authentication"
+          echo "  bug: fix login redirect issue"
+          echo "  docs: update README with setup instructions"
+          exit 1
+        fi
+
+pre-merge-commit:
+  commands:
+    prevent-merge:
+      run: |
+        echo "❌ Merge commits are not allowed!"
+        echo ""
+        echo "Please use rebase instead:"
+        echo "  git rebase <branch>"
+        echo ""
+        echo "Or configure git to rebase by default:"
+        echo "  git config pull.rebase true"
+        exit 1
