@@ -44,6 +44,11 @@ async def recommend_courses(request: RecommendRequest) -> RecommendResponse:
             min_relevance=request.min_relevance,
         )
 
+        # Log query interpretation
+        print(f"\n[Query] {request.query}")
+        print(f"[Interpretation] {response.query_interpretation}")
+        print(f"[Results] {len(response.courses)} courses found\n")
+
         # Check if we got any results
         if not response.courses:
             raise HTTPException(
