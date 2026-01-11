@@ -45,6 +45,11 @@ public class AuthController {
                 "success", false,
                 "message", e.getMessage()
             ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
         }
     }
 

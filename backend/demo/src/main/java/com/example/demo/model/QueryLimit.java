@@ -22,8 +22,16 @@ public class QueryLimit {
     @Column(name = "window_start", nullable = false)
     private LocalDateTime windowStart;
 
-    private static final int MAX_QUERIES = 5;
-    private static final int WINDOW_HOURS = 6;
+    public static final int MAX_QUERIES = 5;
+    public static final int WINDOW_HOURS = 6;
+
+    public static int getMaxQueries() {
+        return MAX_QUERIES;
+    }
+
+    public static int getWindowHours() {
+        return WINDOW_HOURS;
+    }
 
     public QueryLimit() {
         this.queryCount = 0;

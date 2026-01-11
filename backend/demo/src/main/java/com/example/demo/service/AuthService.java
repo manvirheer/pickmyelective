@@ -13,8 +13,9 @@ import com.resend.core.exception.ResendException;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.resend.services.emails.model.CreateEmailResponse;
 
-import io.github.cdimascio.dotenv.Dotenv;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,16 +26,21 @@ import java.util.Optional;
 @Service
 public class AuthService {
 
-    private final Dotenv dotenv = Dotenv.configure()
-            .ignoreIfMissing()
-            .load();
-
-    private final String RESEND_API_KEY = dotenv.get("RESEND_API_KEY");
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
     private final OtpRepository otpRepository;
     private final UserRepository userRepository;
     private final QueryLimitRepository queryLimitRepository;
     private final JwtUtil jwtUtil;
+
+    @Value("${resend.api-key}")
+    private String resendApiKey;
+
+    @Value("${resend.from-email}")
+    private String fromEmail;
+
+    @Value("${auth.allowed-email-domain}")
+    private String allowedEmailDomain;
 
     public AuthService(OtpRepository otpRepository,
                        UserRepository userRepository,
@@ -46,11 +52,26 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
-    @Transactional
+    /**
+     * Main entry point - creates OTP and sends email.
+     * Email sending is outside transaction to avoid holding DB connection during network call.
+     */
     public String sendOtp(String email) {
-        // 1. Validate SFU Email
-        if (!email.trim().toLowerCase().endsWith("@sfu.ca")) {
-            throw new IllegalArgumentException("Only @sfu.ca emails are allowed.");
+        // Validate and create OTP (transactional)
+        Otp otp = createOtpInTransaction(email);
+
+        // Send email (non-transactional, network call)
+        return sendOtpEmail(otp.getEmail(), otp.getOtpCode());
+    }
+
+    /**
+     * Creates OTP in database - runs in transaction.
+     */
+    @Transactional
+    protected Otp createOtpInTransaction(String email) {
+        // 1. Validate email domain
+        if (!email.trim().toLowerCase().endsWith(allowedEmailDomain)) {
+            throw new IllegalArgumentException("Only " + allowedEmailDomain + " emails are allowed.");
         }
 
         String normalizedEmail = email.trim().toLowerCase();
@@ -65,12 +86,19 @@ public class AuthService {
         Otp otp = new Otp(normalizedEmail, otpCode);
         otpRepository.save(otp);
 
-        // 5. Send Email using Resend
-        Resend resend = new Resend(RESEND_API_KEY);
+        logger.info("OTP created for email: {}", normalizedEmail);
+        return otp;
+    }
+
+    /**
+     * Sends OTP via email - runs outside transaction.
+     */
+    private String sendOtpEmail(String email, String otpCode) {
+        Resend resend = new Resend(resendApiKey);
 
         CreateEmailOptions params = CreateEmailOptions.builder()
-                .from("Auth Service <onboarding@resend.dev>")
-                .to(normalizedEmail)
+                .from(fromEmail)
+                .to(email)
                 .subject("Your SFU Verification Code")
                 .html("<div style='font-family: Arial, sans-serif; padding: 20px;'>" +
                       "<h2>PickMyElective Verification</h2>" +
@@ -83,10 +111,11 @@ public class AuthService {
 
         try {
             CreateEmailResponse data = resend.emails().send(params);
+            logger.info("OTP email sent successfully to: {}, ID: {}", email, data.getId());
             return "OTP sent successfully. ID: " + data.getId();
         } catch (ResendException e) {
-            e.printStackTrace();
-            return "Error sending email.";
+            logger.error("Failed to send OTP email to: {}. Error: {}", email, e.getMessage(), e);
+            throw new RuntimeException("Failed to send verification email. Please try again later.");
         }
     }
 
@@ -98,6 +127,7 @@ public class AuthService {
         Optional<Otp> otpOptional = otpRepository.findValidOtpByEmail(normalizedEmail, LocalDateTime.now());
 
         if (otpOptional.isEmpty()) {
+            logger.warn("Invalid or expired OTP attempt for email: {}", normalizedEmail);
             return new AuthResponse(false, "Invalid or expired OTP.");
         }
 
@@ -105,6 +135,7 @@ public class AuthService {
 
         // 2. Verify OTP code
         if (!otp.getOtpCode().equals(otpToVerify)) {
+            logger.warn("Incorrect OTP code entered for email: {}", normalizedEmail);
             return new AuthResponse(false, "Invalid OTP code.");
         }
 
@@ -116,6 +147,7 @@ public class AuthService {
         User user = userRepository.findByEmail(normalizedEmail)
                 .orElseGet(() -> {
                     User newUser = new User(normalizedEmail);
+                    logger.info("New user created: {}", normalizedEmail);
                     return userRepository.save(newUser);
                 });
 
@@ -133,6 +165,7 @@ public class AuthService {
         String token = jwtUtil.generateToken(normalizedEmail);
         long expiresIn = jwtUtil.getExpirationInSeconds();
 
+        logger.info("User authenticated successfully: {}", normalizedEmail);
         return new AuthResponse(token, normalizedEmail, expiresIn);
     }
 
@@ -150,5 +183,6 @@ public class AuthService {
     @Transactional
     public void cleanupExpiredOtps() {
         otpRepository.deleteExpiredOtps(LocalDateTime.now());
+        logger.info("Expired OTPs cleaned up");
     }
 }
