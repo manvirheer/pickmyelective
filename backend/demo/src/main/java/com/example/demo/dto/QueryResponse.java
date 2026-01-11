@@ -1,10 +1,17 @@
 package com.example.demo.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class QueryResponse {
     private String query;
-    private String response;
+
+    @JsonProperty("query_interpretation")
+    private String queryInterpretation;
+
+    private List<RagResponse.CourseResult> courses;
+
     private int remainingQueries;
     private LocalDateTime resetTime;
     private boolean success;
@@ -12,9 +19,11 @@ public class QueryResponse {
 
     public QueryResponse() {}
 
-    public QueryResponse(String query, String response, int remainingQueries, LocalDateTime resetTime) {
+    public QueryResponse(String query, String queryInterpretation, List<RagResponse.CourseResult> courses,
+                         int remainingQueries, LocalDateTime resetTime) {
         this.query = query;
-        this.response = response;
+        this.queryInterpretation = queryInterpretation;
+        this.courses = courses;
         this.remainingQueries = remainingQueries;
         this.resetTime = resetTime;
         this.success = true;
@@ -38,12 +47,20 @@ public class QueryResponse {
         this.query = query;
     }
 
-    public String getResponse() {
-        return response;
+    public String getQueryInterpretation() {
+        return queryInterpretation;
     }
 
-    public void setResponse(String response) {
-        this.response = response;
+    public void setQueryInterpretation(String queryInterpretation) {
+        this.queryInterpretation = queryInterpretation;
+    }
+
+    public List<RagResponse.CourseResult> getCourses() {
+        return courses;
+    }
+
+    public void setCourses(List<RagResponse.CourseResult> courses) {
+        this.courses = courses;
     }
 
     public int getRemainingQueries() {

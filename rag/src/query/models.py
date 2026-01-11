@@ -8,7 +8,7 @@ class QueryFilters(BaseModel):
 
     campus: list[str] | None = Field(
         default=None,
-        description="Filter by campus: Burnaby, Surrey, Vancouver, Online",
+        description="Filter by campus: Burnaby, Surrey, Vancouver",
     )
     wqb: list[str] | None = Field(
         default=None,
@@ -21,6 +21,10 @@ class QueryFilters(BaseModel):
     no_prerequisites: bool | None = Field(
         default=None,
         description="Only courses with no prerequisites",
+    )
+    online_only: bool | None = Field(
+        default=None,
+        description="Only courses available online",
     )
     exclude_departments: list[str] | None = Field(
         default=None,

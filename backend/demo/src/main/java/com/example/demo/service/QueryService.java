@@ -45,7 +45,7 @@ public class QueryService {
     }
 
     @Transactional
-    public QueryResponse processQuery(User user, String queryText) {
+    public QueryResponse processQuery(User user, String queryText, RagRequest.QueryFilters filters) {
         // Use pessimistic locking to prevent race conditions
         QueryLimit queryLimit = getOrCreateQueryLimitWithLock(user);
 
@@ -65,7 +65,10 @@ public class QueryService {
         }
 
         // Process the query with RAG service
-        String responseText = processQueryWithRAG(queryText);
+        RagResponse ragResponse = processQueryWithRAG(queryText, filters);
+
+        // Format response text for history storage
+        String responseText = formatRagResponse(ragResponse);
 
         // Save query history
         QueryHistory history = new QueryHistory(user, queryText, responseText);
@@ -77,9 +80,21 @@ public class QueryService {
 
         logger.info("Query processed for user: {}, remaining queries: {}", user.getEmail(), queryLimit.getRemainingQueries());
 
+        // Return structured response
+        if (ragResponse == null || !ragResponse.isSuccess()) {
+            return new QueryResponse(
+                queryText,
+                ragResponse != null ? ragResponse.getQueryInterpretation() : null,
+                List.of(),
+                queryLimit.getRemainingQueries(),
+                queryLimit.getWindowResetTime()
+            );
+        }
+
         return new QueryResponse(
             queryText,
-            responseText,
+            ragResponse.getQueryInterpretation(),
+            ragResponse.getCourses() != null ? ragResponse.getCourses() : List.of(),
             queryLimit.getRemainingQueries(),
             queryLimit.getWindowResetTime()
         );
@@ -141,9 +156,9 @@ public class QueryService {
     /**
      * Calls the RAG service to get course recommendations.
      */
-    private String processQueryWithRAG(String queryText) {
+    private RagResponse processQueryWithRAG(String queryText, RagRequest.QueryFilters filters) {
         try {
-            RagRequest request = new RagRequest(queryText);
+            RagRequest request = new RagRequest(queryText, filters);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -158,22 +173,30 @@ public class QueryService {
 
             if (response == null) {
                 logger.error("RAG service returned null response");
-                return "Unable to process your query. Please try again later.";
+                RagResponse errorResponse = new RagResponse();
+                errorResponse.setSuccess(false);
+                errorResponse.setError("Unable to process your query. Please try again later.");
+                return errorResponse;
             }
 
             if (!response.isSuccess()) {
                 logger.error("RAG service returned error: {}", response.getError());
-                return "Error processing query: " + (response.getError() != null ? response.getError() : "Unknown error");
             }
 
-            return formatRagResponse(response);
+            return response;
 
         } catch (RestClientException e) {
             logger.error("Failed to connect to RAG service: {}", e.getMessage(), e);
-            return "Course recommendation service is temporarily unavailable. Please try again later.";
+            RagResponse errorResponse = new RagResponse();
+            errorResponse.setSuccess(false);
+            errorResponse.setError("Course recommendation service is temporarily unavailable. Please try again later.");
+            return errorResponse;
         } catch (Exception e) {
             logger.error("Unexpected error calling RAG service: {}", e.getMessage(), e);
-            return "An unexpected error occurred. Please try again later.";
+            RagResponse errorResponse = new RagResponse();
+            errorResponse.setSuccess(false);
+            errorResponse.setError("An unexpected error occurred. Please try again later.");
+            return errorResponse;
         }
     }
 

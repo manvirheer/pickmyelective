@@ -185,6 +185,13 @@ class QueryEngine:
                 if not any(w in course_wqb for w in filters.wqb):
                     continue
 
+            # Online only filter (comma-separated string)
+            if filters.online_only:
+                delivery_str = metadata.get("delivery_methods", "")
+                course_delivery = [d.strip() for d in delivery_str.split(",") if d.strip()]
+                if "Online" not in course_delivery:
+                    continue
+
             # Department exclusion filter
             if filters.exclude_departments:
                 dept = metadata.get("department", "")
@@ -206,9 +213,9 @@ class QueryEngine:
 
         # Calculate fetch multiplier based on active filters
         # More filters = need more candidates to ensure we get n_results after filtering
-        # For list filters (campus, wqb), we need to fetch many more since these can
+        # For list filters (campus, wqb, online_only), we need to fetch many more since these can
         # filter out most courses and matching courses may rank low semantically
-        has_list_filters = filters.campus or filters.wqb or filters.exclude_departments
+        has_list_filters = filters.campus or filters.wqb or filters.online_only or filters.exclude_departments
         has_scalar_filters = filters.max_level is not None or filters.no_prerequisites
         if has_list_filters:
             # List filters (campus, wqb) are applied post-retrieval and can be very

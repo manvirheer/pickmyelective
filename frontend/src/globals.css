@@ -1,0 +1,590 @@
+@import "tailwindcss";
+
+/* =============================================================================
+   BASE COLORS & VARIABLES
+   ============================================================================= */
+:root {
+  /* Grayscale palette */
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+  --color-gray-50: #F9FAFB;
+  --color-gray-100: #F3F4F6;
+  --color-gray-200: #E5E7EB;
+  --color-gray-300: #D1D5DB;
+  --color-gray-500: #6B7280;
+  --color-gray-700: #374151;
+  --color-gray-900: #111827;
+
+  /* Navy palette (for dark mode) */
+  --color-navy-950: #1A1D28;
+  --color-navy-900: #232732;
+  --color-navy-800: #2A2F3C;
+  --color-navy-700: #32374A;
+  --color-navy-600: #3F4558;
+  --color-navy-500: #4D5366;
+
+  /* Animation variables */
+  --easingSmooth: cubic-bezier(0.25, 1, 0.5, 1);
+
+  /* Shadow system */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* =============================================================================
+   TAILWIND THEME EXTENSIONS
+   ============================================================================= */
+@theme {
+  --font-sans: 'Host Grotesk', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* =============================================================================
+   LIGHT MODE THEME (DEFAULT)
+   ============================================================================= */
+:root {
+  /* Page colors */
+  --page-bg: #FFFFFF;
+  --page-surface: #FFFFFF;
+  --page-surface-elevated: #FFFFFF;
+  --page-border: var(--color-gray-200);
+  --page-text: var(--color-gray-900);
+  --page-text-muted: var(--color-gray-500);
+
+  /* Primary accent */
+  --page-primary: #0066FF;
+  --page-primary-hover: #0052CC;
+
+  /* Functional colors */
+  --page-success: #10B981;
+  --page-warning: #F59E0B;
+  --page-error: #EF4444;
+
+  /* Course card specific */
+  --card-match-bg: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  --card-match-border: var(--page-primary);
+
+  /* Badge colors */
+  --badge-secondary-bg: var(--color-gray-200);
+  --badge-secondary-text: var(--color-gray-700);
+  --badge-info-bg: #DBEAFE;
+  --badge-info-text: #1E40AF;
+  --badge-dark-bg: var(--color-gray-700);
+  --badge-dark-text: #FFFFFF;
+}
+
+/* =============================================================================
+   DARK MODE THEME
+   ============================================================================= */
+body.dark-mode {
+  --page-bg: var(--color-navy-950);
+  --page-surface: var(--color-navy-900);
+  --page-surface-elevated: var(--color-navy-800);
+  --page-border: var(--color-navy-600);
+  --page-text: #E5E7EB;
+  --page-text-muted: #9CA3AF;
+
+  --page-primary: #3B82F6;
+  --page-primary-hover: #60A5FA;
+
+  --page-success: #34D399;
+  --page-warning: #FBBF24;
+  --page-error: #F87171;
+
+  --card-match-bg: linear-gradient(135deg, #2A2F3C 0%, #32374A 100%);
+  --card-match-border: var(--page-primary);
+
+  /* Badge colors for dark mode */
+  --badge-secondary-bg: var(--color-navy-600);
+  --badge-secondary-text: #E5E7EB;
+  --badge-info-bg: #1E3A5F;
+  --badge-info-text: #93C5FD;
+  --badge-dark-bg: var(--color-navy-500);
+  --badge-dark-text: #E5E7EB;
+}
+
+/* =============================================================================
+   BASE STYLES
+   ============================================================================= */
+html, body, #root {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--page-bg);
+  color: var(--page-text);
+  transition:
+    background-color 0.4s var(--easingSmooth),
+    color 0.4s var(--easingSmooth);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* =============================================================================
+   BENTO CARD SYSTEM
+   ============================================================================= */
+.bento-card {
+  border: 1px solid var(--page-border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: var(--page-surface);
+  transition: all 0.3s var(--easingSmooth);
+  position: relative;
+  box-shadow: var(--shadow-sm);
+}
+
+.bento-card:hover {
+  border-color: var(--page-primary);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.bento-card-static {
+  border: 1px solid var(--page-border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: var(--page-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* =============================================================================
+   BLURRED BACKGROUND SECTION
+   ============================================================================= */
+.blurred-bg-section {
+  background-image: url('./assets/BackgroundImageLong.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  position: relative;
+}
+
+.blurred-bg-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .blurred-bg-section::before {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.blurred-bg-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* =============================================================================
+   FORM ELEMENTS
+   ============================================================================= */
+input[type="text"],
+input[type="email"],
+input[type="search"] {
+  background-color: var(--page-surface);
+  border-color: var(--page-border);
+  color: var(--page-text);
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="search"]:focus {
+  outline: none;
+  border-color: var(--page-primary);
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+}
+
+/* Search bar glow effect */
+.search-glow {
+  box-shadow:
+    0 0 20px rgba(0, 102, 255, 0.08),
+    0 0 40px rgba(0, 102, 255, 0.04),
+    0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s var(--easingSmooth);
+}
+
+.search-glow:focus-within {
+  box-shadow:
+    0 0 25px rgba(0, 102, 255, 0.15),
+    0 0 50px rgba(0, 102, 255, 0.08),
+    0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode .search-glow {
+  box-shadow:
+    0 0 20px rgba(59, 130, 246, 0.1),
+    0 0 40px rgba(59, 130, 246, 0.05),
+    0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode .search-glow:focus-within {
+  box-shadow:
+    0 0 25px rgba(59, 130, 246, 0.2),
+    0 0 50px rgba(59, 130, 246, 0.1),
+    0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+input[type="text"]::placeholder {
+  color: var(--page-text-muted);
+}
+
+/* =============================================================================
+   CUSTOM CHECKBOX
+   ============================================================================= */
+.custom-checkbox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.custom-checkbox input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.custom-checkbox .checkmark {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--page-border);
+  border-radius: 4px;
+  background-color: var(--page-surface);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.custom-checkbox:hover .checkmark {
+  border-color: var(--page-text-muted);
+}
+
+.custom-checkbox input:checked ~ .checkmark {
+  background-color: var(--page-primary);
+  border-color: var(--page-primary);
+}
+
+.custom-checkbox .checkmark svg {
+  width: 12px;
+  height: 12px;
+  stroke: white;
+  stroke-width: 3;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.15s ease;
+}
+
+.custom-checkbox input:checked ~ .checkmark svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.custom-checkbox .label-text {
+  font-size: 0.875rem;
+  color: var(--page-text);
+  transition: color 0.15s ease;
+}
+
+.custom-checkbox:hover .label-text {
+  color: var(--page-text);
+}
+
+/* =============================================================================
+   CUSTOM SELECT
+   ============================================================================= */
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select select {
+  width: 100%;
+  padding: 0.625rem 2.5rem 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  border: 1.5px solid var(--page-border);
+  border-radius: 6px;
+  background-color: var(--page-surface);
+  color: var(--page-text);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  transition: all 0.15s ease;
+}
+
+.custom-select select:hover {
+  border-color: var(--page-text-muted);
+}
+
+.custom-select select:focus {
+  outline: none;
+  border-color: var(--page-primary);
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+}
+
+.custom-select::after {
+  content: '';
+  position: absolute;
+  right: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--page-text-muted);
+  pointer-events: none;
+  transition: border-color 0.15s ease;
+}
+
+.custom-select:hover::after {
+  border-top-color: var(--page-text);
+}
+
+/* =============================================================================
+   REFINED BADGES
+   ============================================================================= */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.badge-secondary {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-700);
+  border-color: var(--color-gray-200);
+}
+
+.badge-info {
+  background-color: #EFF6FF;
+  color: #1D4ED8;
+  border-color: #BFDBFE;
+}
+
+.badge-dark {
+  background-color: var(--color-gray-800, #1F2937);
+  color: #FFFFFF;
+}
+
+body.dark-mode .badge-secondary {
+  background-color: var(--color-navy-700);
+  color: #D1D5DB;
+  border-color: var(--color-navy-600);
+}
+
+body.dark-mode .badge-info {
+  background-color: #1E3A5F;
+  color: #93C5FD;
+  border-color: #1E40AF;
+}
+
+body.dark-mode .badge-dark {
+  background-color: var(--color-navy-600);
+  color: #E5E7EB;
+}
+
+/* =============================================================================
+   TOGGLE PILL / CHIP BUTTONS
+   ============================================================================= */
+.toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  border: 1.5px solid var(--page-border);
+  background-color: var(--page-surface);
+  color: var(--page-text);
+  cursor: pointer;
+  transition: all 0.2s var(--easingSmooth);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.toggle-pill:hover {
+  border-color: var(--page-text-muted);
+  background-color: var(--color-gray-50);
+}
+
+.toggle-pill.active {
+  background-color: var(--page-primary);
+  border-color: var(--page-primary);
+  color: white;
+}
+
+.toggle-pill.active:hover {
+  background-color: var(--page-primary-hover);
+  border-color: var(--page-primary-hover);
+}
+
+/* Dark mode toggle pills */
+body.dark-mode .toggle-pill {
+  background-color: var(--color-navy-800);
+  border-color: var(--color-navy-600);
+}
+
+body.dark-mode .toggle-pill:hover {
+  border-color: var(--color-navy-500);
+  background-color: var(--color-navy-700);
+}
+
+body.dark-mode .toggle-pill.active {
+  background-color: var(--page-primary);
+  border-color: var(--page-primary);
+}
+
+/* Pill group container */
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Special highlight pill (for important options like "No Prerequisites") */
+.toggle-pill.highlight {
+  border-color: var(--page-success);
+  color: var(--page-success);
+}
+
+.toggle-pill.highlight:hover {
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.toggle-pill.highlight.active {
+  background-color: var(--page-success);
+  border-color: var(--page-success);
+  color: white;
+}
+
+body.dark-mode .toggle-pill.highlight {
+  border-color: var(--page-success);
+  color: var(--page-success);
+}
+
+body.dark-mode .toggle-pill.highlight:hover {
+  background-color: rgba(52, 211, 153, 0.15);
+}
+
+body.dark-mode .toggle-pill.highlight.active {
+  background-color: var(--page-success);
+  border-color: var(--page-success);
+}
+
+/* =============================================================================
+   SCROLLBAR STYLING
+   ============================================================================= */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--page-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--page-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--page-text-muted);
+}
+
+/* =============================================================================
+   UTILITY CLASSES
+   ============================================================================= */
+.text-primary {
+  color: var(--page-primary);
+}
+
+.text-muted {
+  color: var(--page-text-muted);
+}
+
+.bg-surface {
+  background-color: var(--page-surface);
+}
+
+.border-theme {
+  border-color: var(--page-border);
+}
+
+/* Animation for loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* =============================================================================
+   MODAL STYLES
+   ============================================================================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  background-color: #FFFFFF;
+  border: 1px solid var(--page-border);
+  box-shadow: var(--shadow-xl);
+}
+
+body.dark-mode .modal-content {
+  background-color: var(--color-navy-900);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  color: var(--page-text-muted);
+  transition: background-color 0.2s;
+}
+
+.modal-close-btn:hover {
+  background-color: var(--color-gray-100);
+}
+
+body.dark-mode .modal-close-btn:hover {
+  background-color: var(--color-navy-700);
+}

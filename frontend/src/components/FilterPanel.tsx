@@ -1,133 +1,193 @@
-import type { QueryFilters } from '../types';
+import { RotateCcw, CheckCircle, Wifi } from 'lucide-react'
+import type { QueryFilters } from '@/types'
 
 interface FilterPanelProps {
-  filters: QueryFilters;
-  onChange: (filters: QueryFilters) => void;
+  filters: QueryFilters
+  onChange: (filters: QueryFilters) => void
 }
 
-const CAMPUSES = ['Burnaby', 'Surrey', 'Vancouver'];
-const WQB_OPTIONS = ['W', 'Q', 'B-Sci', 'B-Soc', 'B-Hum'];
-const LEVELS = [100, 200, 300, 400];
+const CAMPUSES = ['Burnaby', 'Surrey', 'Vancouver']
+const WQB_OPTIONS = [
+  { value: 'W', label: 'W' },
+  { value: 'Q', label: 'Q' },
+  { value: 'B-Sci', label: 'B-Sci' },
+  { value: 'B-Soc', label: 'B-Soc' },
+  { value: 'B-Hum', label: 'B-Hum' },
+]
+const LEVELS = [
+  { value: 100, label: '1XX' },
+  { value: 200, label: '2XX' },
+  { value: 300, label: '3XX' },
+]
 
 export function FilterPanel({ filters, onChange }: FilterPanelProps) {
-  const handleCampusChange = (campus: string, checked: boolean) => {
-    const current = filters.campus || [];
-    const updated = checked
-      ? [...current, campus]
-      : current.filter((c) => c !== campus);
-    onChange({ ...filters, campus: updated.length > 0 ? updated : undefined });
-  };
+  const handleCampusToggle = (campus: string) => {
+    const current = filters.campus || []
+    const isActive = current.includes(campus)
+    const updated = isActive
+      ? current.filter((c: string) => c !== campus)
+      : [...current, campus]
+    onChange({ ...filters, campus: updated.length > 0 ? updated : undefined })
+  }
 
-  const handleWqbChange = (wqb: string, checked: boolean) => {
-    const current = filters.wqb || [];
-    const updated = checked
-      ? [...current, wqb]
-      : current.filter((w) => w !== wqb);
-    onChange({ ...filters, wqb: updated.length > 0 ? updated : undefined });
-  };
+  const handleWqbToggle = (wqb: string) => {
+    const current = filters.wqb || []
+    const isActive = current.includes(wqb)
+    const updated = isActive
+      ? current.filter((w: string) => w !== wqb)
+      : [...current, wqb]
+    onChange({ ...filters, wqb: updated.length > 0 ? updated : undefined })
+  }
 
-  const handleMaxLevelChange = (level: number | undefined) => {
-    onChange({ ...filters, max_level: level });
-  };
+  const handleLevelToggle = (level: number) => {
+    // Toggle: if already selected, deselect; otherwise select
+    const isActive = filters.max_level === level
+    onChange({ ...filters, max_level: isActive ? undefined : level })
+  }
 
-  const handleNoPrereqChange = (checked: boolean) => {
-    onChange({ ...filters, no_prerequisites: checked || undefined });
-  };
+  const handleNoPrereqToggle = () => {
+    onChange({ ...filters, no_prerequisites: !filters.no_prerequisites || undefined })
+  }
+
+  const handleOnlineOnlyToggle = () => {
+    onChange({ ...filters, online_only: !filters.online_only || undefined })
+  }
 
   const clearFilters = () => {
-    onChange({});
-  };
+    onChange({})
+  }
 
   const hasActiveFilters =
     (filters.campus && filters.campus.length > 0) ||
     (filters.wqb && filters.wqb.length > 0) ||
     filters.max_level !== undefined ||
-    filters.no_prerequisites;
+    filters.no_prerequisites ||
+    filters.online_only
 
   return (
-    <div className="filter-panel card">
-      <div className="card-header d-flex justify-content-between align-items-center">
-        <h6 className="mb-0">Filters</h6>
+    <div className="bento-card-static">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h3
+          className="font-semibold text-lg"
+          style={{ color: 'var(--page-text)' }}
+        >
+          Filters
+        </h3>
         {hasActiveFilters && (
-          <button className="btn btn-sm btn-link text-decoration-none p-0" onClick={clearFilters}>
-            Clear all
+          <button
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            style={{ color: 'var(--page-text-muted)' }}
+            onClick={clearFilters}
+            title="Reset filters"
+          >
+            <RotateCcw className="w-4 h-4" />
           </button>
         )}
       </div>
-      <div className="card-body">
-        {/* Campus Filter */}
-        <div className="filter-section mb-3">
-          <label className="form-label fw-semibold">Campus</label>
+
+      {/* Campus */}
+      <FilterSection title="Campus">
+        <div className="pill-group">
           {CAMPUSES.map((campus) => (
-            <div className="form-check" key={campus}>
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id={`campus-${campus}`}
-                checked={filters.campus?.includes(campus) || false}
-                onChange={(e) => handleCampusChange(campus, e.target.checked)}
-              />
-              <label className="form-check-label" htmlFor={`campus-${campus}`}>
-                {campus}
-              </label>
-            </div>
-          ))}
-        </div>
-
-        {/* WQB Filter */}
-        <div className="filter-section mb-3">
-          <label className="form-label fw-semibold">WQB Designation</label>
-          {WQB_OPTIONS.map((wqb) => (
-            <div className="form-check" key={wqb}>
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id={`wqb-${wqb}`}
-                checked={filters.wqb?.includes(wqb) || false}
-                onChange={(e) => handleWqbChange(wqb, e.target.checked)}
-              />
-              <label className="form-check-label" htmlFor={`wqb-${wqb}`}>
-                {wqb}
-              </label>
-            </div>
-          ))}
-        </div>
-
-        {/* Max Level Filter */}
-        <div className="filter-section mb-3">
-          <label className="form-label fw-semibold">Max Course Level</label>
-          <select
-            className="form-select form-select-sm"
-            value={filters.max_level || ''}
-            onChange={(e) =>
-              handleMaxLevelChange(e.target.value ? Number(e.target.value) : undefined)
-            }
-          >
-            <option value="">Any level</option>
-            {LEVELS.map((level) => (
-              <option key={level} value={level}>
-                {level} level and below
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* No Prerequisites Filter */}
-        <div className="filter-section">
-          <div className="form-check form-switch">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              id="no-prereqs"
-              checked={filters.no_prerequisites || false}
-              onChange={(e) => handleNoPrereqChange(e.target.checked)}
+            <TogglePill
+              key={campus}
+              label={campus}
+              active={filters.campus?.includes(campus) || false}
+              onClick={() => handleCampusToggle(campus)}
             />
-            <label className="form-check-label fw-semibold" htmlFor="no-prereqs">
-              No prerequisites only
-            </label>
-          </div>
+          ))}
         </div>
-      </div>
+      </FilterSection>
+
+      {/* Course Level */}
+      <FilterSection title="Course Level">
+        <div className="pill-group">
+          {LEVELS.map(({ value, label }) => (
+            <TogglePill
+              key={value}
+              label={label}
+              active={filters.max_level === value}
+              onClick={() => handleLevelToggle(value)}
+            />
+          ))}
+        </div>
+        <p
+          className="text-xs mt-2"
+          style={{ color: 'var(--page-text-muted)' }}
+        >
+          Select max course level
+        </p>
+      </FilterSection>
+
+      {/* WQB Designations */}
+      <FilterSection title="Designations">
+        <div className="pill-group">
+          {WQB_OPTIONS.map(({ value, label }) => (
+            <TogglePill
+              key={value}
+              label={label}
+              active={filters.wqb?.includes(value) || false}
+              onClick={() => handleWqbToggle(value)}
+            />
+          ))}
+        </div>
+      </FilterSection>
+
+      {/* Options Section */}
+      <FilterSection title="Options">
+        <div className="space-y-2">
+          <button
+            className={`toggle-pill highlight w-full justify-start gap-2 ${filters.no_prerequisites ? 'active' : ''}`}
+            onClick={handleNoPrereqToggle}
+          >
+            <CheckCircle className="w-4 h-4" />
+            <span>No prerequisites</span>
+          </button>
+          <button
+            className={`toggle-pill highlight w-full justify-start gap-2 ${filters.online_only ? 'active' : ''}`}
+            onClick={handleOnlineOnlyToggle}
+          >
+            <Wifi className="w-4 h-4" />
+            <span>Online only</span>
+          </button>
+        </div>
+      </FilterSection>
     </div>
-  );
+  )
+}
+
+// Helper components
+function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-5">
+      <label
+        className="block font-medium text-sm mb-3"
+        style={{ color: 'var(--page-text)' }}
+      >
+        {title}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+function TogglePill({
+  label,
+  active,
+  onClick,
+}: {
+  label: string
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      className={`toggle-pill ${active ? 'active' : ''}`}
+      onClick={onClick}
+      type="button"
+    >
+      {label}
+    </button>
+  )
 }

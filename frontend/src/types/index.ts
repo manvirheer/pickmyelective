@@ -5,14 +5,8 @@ export interface QueryFilters {
   wqb?: string[];
   max_level?: number;
   no_prerequisites?: boolean;
+  online_only?: boolean;
   exclude_departments?: string[];
-}
-
-export interface RecommendRequest {
-  query: string;
-  filters?: QueryFilters;
-  top_k?: number;
-  min_relevance?: number;
 }
 
 export interface CourseResult {
@@ -30,12 +24,9 @@ export interface CourseResult {
   match_reason: string;
 }
 
-export interface RecommendResponse {
-  success: boolean;
-  query_interpretation: string;
-  courses: CourseResult[];
+export interface ApiError {
+  error: string;
 }
 
-export interface ApiError {
-  detail: string;
-}
+// Re-export types from api.ts for convenience
+export type { QueryRequest, QueryResponse, QueryLimitResponse, QueryHistoryItem } from '@/services/api';

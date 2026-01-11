@@ -49,7 +49,7 @@ public class QueryController {
                     .body(Map.of("error", "Query is required"));
         }
 
-        QueryResponse response = queryService.processQuery(user, request.getQuery());
+        QueryResponse response = queryService.processQuery(user, request.getQuery(), request.getFilters());
 
         if (!response.isSuccess()) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(response);
