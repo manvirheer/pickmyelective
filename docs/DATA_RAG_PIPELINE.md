@@ -633,30 +633,6 @@ Daily cron job:
 
 ---
 
-## TODO / Open Items
-
-### Must Do Before Hackathon
-- [ ] Write and test fetch script
-- [ ] Write preprocessing/cleaning functions
-- [ ] Define final filter criteria
-- [ ] Generate embeddings for all courses
-- [ ] Set up ChromaDB with schema
-- [ ] Test 10 sample queries end-to-end
-
-### Nice to Have
-- [ ] Add professor ratings (RateMyProf scraping)
-- [ ] Parse prerequisites into structured format
-- [ ] Add course syllabus links
-- [ ] Historical enrollment data
-
-### Future Considerations
-- [ ] Fall 2026 data (when available)
-- [ ] Multi-semester support
-- [ ] Real-time seat availability
-- [ ] Course similarity recommendations
-
----
-
 ## Appendix: Sample Elective-Friendly Courses
 
 Based on our analysis, these types of courses are ideal electives:
