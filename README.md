@@ -144,7 +144,29 @@ flowchart LR
 
 ## Quick Start
 
-### Prerequisites
+### Option 1: Docker (Recommended)
+
+The easiest way to run PickMyElective is with Docker Compose:
+
+```bash
+# Copy and configure environment variables
+cp .env.docker.example .env
+# Edit .env with your API keys (OPENAI_API_KEY, GOOGLE_API_KEY, JWT_SECRET, RESEND_API_KEY)
+
+# Build and start all services
+docker compose up --build
+
+# Access the application
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:8080
+# RAG Service: http://localhost:8000
+```
+
+See [Docker Documentation](docs/DOCKER.md) for detailed setup instructions.
+
+### Option 2: Manual Setup
+
+#### Prerequisites
 
 - Node.js 18+
 - Java 21
@@ -277,6 +299,7 @@ pickmyelective/
 
 ## Documentation
 
+- [Docker Setup](docs/DOCKER.md)
 - [Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)
 - [API Contracts](docs/API_CONTRACTS.md)
 - [Data & RAG Pipeline](docs/DATA_RAG_PIPELINE.md)

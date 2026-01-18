@@ -1,5 +1,6 @@
 """Query engine for course recommendations using RAG."""
 
+import asyncio
 import json
 from pathlib import Path
 
@@ -66,7 +67,7 @@ class QueryEngine:
         collection_name: str,
         openai_api_key: str | None = None,
         google_api_key: str | None = None,
-        llm_model: str = "gemini-2.0-flash",
+        llm_model: str = "gemini-2.5-flash",
         embedding_model: str = "text-embedding-3-large",
     ):
         """Initialize the query engine.
@@ -105,20 +106,37 @@ class QueryEngine:
         """LLM Call #1: Extract topics and interpretation from user query."""
         prompt = INTERPRET_PROMPT.format(query=query)
 
-        response = await self.gemini.aio.models.generate_content(
-            model=self.llm_model,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                max_output_tokens=200,
-                temperature=0.2,
-            ),
-        )
+        try:
+            async with asyncio.timeout(15):
+                response = await self.gemini.aio.models.generate_content(
+                    model=self.llm_model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.2,
+                    ),
+                )
+        except asyncio.TimeoutError:
+            # Fallback on timeout: use query as-is
+            return QueryInterpretation(
+                topics=[query],
+                interpretation=f"Looking for courses related to: {query}",
+            )
 
         content = response.text or "{}"
 
         # Parse JSON response
         try:
-            data = json.loads(content)
+            # Clean the response - sometimes the model adds markdown code blocks
+            cleaned = content.strip()
+            if cleaned.startswith("```json"):
+                cleaned = cleaned[7:]
+            if cleaned.startswith("```"):
+                cleaned = cleaned[3:]
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+
+            data = json.loads(cleaned)
             return QueryInterpretation(
                 topics=data.get("topics", []),
                 interpretation=data.get("interpretation", ""),
@@ -132,10 +150,11 @@ class QueryEngine:
 
     async def embed_query(self, text: str) -> list[float]:
         """Generate embedding for search text."""
-        response = await self.openai.embeddings.create(
-            model=self.embedding_model,
-            input=text,
-        )
+        async with asyncio.timeout(10):
+            response = await self.openai.embeddings.create(
+                model=self.embedding_model,
+                input=text,
+            )
         return response.data[0].embedding
 
     def build_filters(self, filters: QueryFilters) -> dict | None:
@@ -291,14 +310,17 @@ class QueryEngine:
             description=desc_truncated,
         )
 
-        response = await self.gemini.aio.models.generate_content(
-            model=self.llm_model,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                max_output_tokens=100,
-                temperature=0.5,
-            ),
-        )
+        try:
+            async with asyncio.timeout(15):
+                response = await self.gemini.aio.models.generate_content(
+                    model=self.llm_model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.5,
+                    ),
+                )
+        except asyncio.TimeoutError:
+            return "Matches your search interests."
 
         return response.text or "Matches your search interests."
 
