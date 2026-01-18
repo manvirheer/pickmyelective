@@ -38,10 +38,11 @@ public class QueryService {
     private String ragServiceUrl;
 
     public QueryService(QueryHistoryRepository queryHistoryRepository,
-                        QueryLimitRepository queryLimitRepository) {
+                        QueryLimitRepository queryLimitRepository,
+                        RestTemplate restTemplate) {
         this.queryHistoryRepository = queryHistoryRepository;
         this.queryLimitRepository = queryLimitRepository;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
     }
 
     @Transactional

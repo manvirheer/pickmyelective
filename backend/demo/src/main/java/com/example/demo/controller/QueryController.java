@@ -8,6 +8,7 @@ import com.example.demo.model.User;
 import com.example.demo.service.AuthService;
 import com.example.demo.service.QueryService;
 import com.example.demo.security.JwtUtil;
+import com.example.demo.validation.QueryValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,11 +23,13 @@ public class QueryController {
     private final QueryService queryService;
     private final AuthService authService;
     private final JwtUtil jwtUtil;
+    private final QueryValidator queryValidator;
 
-    public QueryController(QueryService queryService, AuthService authService, JwtUtil jwtUtil) {
+    public QueryController(QueryService queryService, AuthService authService, JwtUtil jwtUtil, QueryValidator queryValidator) {
         this.queryService = queryService;
         this.authService = authService;
         this.jwtUtil = jwtUtil;
+        this.queryValidator = queryValidator;
     }
 
     // Submit a query
@@ -44,12 +47,17 @@ public class QueryController {
                     .body(Map.of("error", "Invalid or expired token"));
         }
 
-        if (request.getQuery() == null || request.getQuery().trim().isEmpty()) {
+        // Validate and sanitize query input
+        try {
+            queryValidator.validate(request.getQuery());
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Query is required"));
+                    .body(Map.of("error", e.getMessage()));
         }
 
-        QueryResponse response = queryService.processQuery(user, request.getQuery(), request.getFilters());
+        String sanitizedQuery = queryValidator.sanitize(request.getQuery());
+
+        QueryResponse response = queryService.processQuery(user, sanitizedQuery, request.getFilters());
 
         if (!response.isSuccess()) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(response);
