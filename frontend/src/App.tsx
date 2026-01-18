@@ -8,6 +8,7 @@ import { QueryLimitIndicator } from '@/components/QueryLimitIndicator'
 import { QueryHistory } from '@/components/QueryHistory'
 import { getRecommendations } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
+import { useQueryLimit } from '@/context/QueryLimitContext'
 import { Search, GraduationCap, Loader2, AlertCircle, MessageSquare, Sparkles, Zap } from 'lucide-react'
 import type { QueryFilters, CourseResult } from '@/types'
 
@@ -20,9 +21,10 @@ function App() {
   const [hasSearched, setHasSearched] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const pendingQueryRef = useRef<string | null>(null)
+  const pendingQueryRef = useRef<{ query: string; filters: QueryFilters } | null>(null)
 
   const { isAuthenticated } = useAuth()
+  const { refreshLimit } = useQueryLimit()
 
   // Reset app state when user logs out
   useEffect(() => {
@@ -32,27 +34,30 @@ function App() {
       setError(null)
       setHasSearched(false)
       setSearchQuery('')
+      setFilters({})
     }
   }, [isAuthenticated])
 
   // Execute search (bypasses auth check - called when we know user is authenticated)
-  const executeSearch = async (query: string) => {
+  const executeSearch = async (query: string, searchFilters?: QueryFilters) => {
     setIsLoading(true)
     setError(null)
     setHasSearched(true)
 
+    // Use provided filters or current filter state
+    const filtersToUse = searchFilters ?? filters
+
     try {
       const response = await getRecommendations({
         query,
-        filters: Object.keys(filters).length > 0 ? filters : undefined,
+        filters: Object.keys(filtersToUse).length > 0 ? filtersToUse : undefined,
       })
 
       setCourses(response.courses || [])
       setInterpretation(response.query_interpretation || '')
 
       // Refresh query limit indicator
-      const refreshLimit = (window as { refreshQueryLimit?: () => void }).refreshQueryLimit
-      if (refreshLimit) refreshLimit()
+      refreshLimit()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An error occurred'
       setError(message)
@@ -64,9 +69,9 @@ function App() {
   }
 
   const handleSearch = async (query: string) => {
-    // If not authenticated, show login modal and save the query
+    // If not authenticated, show login modal and save the query with current filters
     if (!isAuthenticated) {
-      pendingQueryRef.current = query
+      pendingQueryRef.current = { query, filters: { ...filters } }
       setIsLoginModalOpen(true)
       return
     }
@@ -78,12 +83,14 @@ function App() {
     // Ensure modal is closed (avoid stale closure issue)
     setIsLoginModalOpen(false)
 
-    // If there was a pending query, execute it directly
+    // If there was a pending query, execute it with the saved filters
     // We know user just logged in, so skip auth check by calling executeSearch
     if (pendingQueryRef.current) {
-      const query = pendingQueryRef.current
+      const { query, filters: savedFilters } = pendingQueryRef.current
       pendingQueryRef.current = null
-      executeSearch(query)
+      // Restore the filters that were active when the user initiated the search
+      setFilters(savedFilters)
+      executeSearch(query, savedFilters)
     }
   }
 

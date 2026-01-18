@@ -1,7 +1,7 @@
 import type { QueryFilters, CourseResult } from '../types';
 import { getToken } from './auth';
 
-const API_URL = 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export interface QueryRequest {
   query: string;

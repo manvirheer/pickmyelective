@@ -46,11 +46,13 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
   }
 
   const handleNoPrereqToggle = () => {
-    onChange({ ...filters, no_prerequisites: !filters.no_prerequisites || undefined })
+    const isActive = filters.no_prerequisites === true
+    onChange({ ...filters, no_prerequisites: isActive ? undefined : true })
   }
 
   const handleOnlineOnlyToggle = () => {
-    onChange({ ...filters, online_only: !filters.online_only || undefined })
+    const isActive = filters.online_only === true
+    onChange({ ...filters, online_only: isActive ? undefined : true })
   }
 
   const clearFilters = () => {

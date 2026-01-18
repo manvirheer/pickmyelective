@@ -1,45 +1,12 @@
-import { useEffect, useState } from 'react'
 import { Clock, Zap } from 'lucide-react'
-import { getQueryLimit } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
-
-interface QueryLimitState {
-  remainingQueries: number
-  maxQueries: number
-  resetTime: string | null
-}
+import { useQueryLimit } from '@/context/QueryLimitContext'
 
 export function QueryLimitIndicator() {
   const { isAuthenticated } = useAuth()
-  const [limit, setLimit] = useState<QueryLimitState | null>(null)
+  const { remainingQueries, maxQueries, resetTime } = useQueryLimit()
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchLimit()
-    } else {
-      // Reset limit state when user logs out
-      setLimit(null)
-    }
-  }, [isAuthenticated])
-
-  const fetchLimit = async () => {
-    try {
-      const data = await getQueryLimit()
-      setLimit(data)
-    } catch {
-      // Silently fail - user will see limit in query response
-    }
-  }
-
-  // Expose refresh function for parent components
-  useEffect(() => {
-    (window as { refreshQueryLimit?: () => void }).refreshQueryLimit = fetchLimit
-    return () => {
-      delete (window as { refreshQueryLimit?: () => void }).refreshQueryLimit
-    }
-  }, [])
-
-  if (!isAuthenticated || !limit) {
+  if (!isAuthenticated || maxQueries === 0) {
     return null
   }
 
@@ -48,8 +15,8 @@ export function QueryLimitIndicator() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  const isLow = limit.remainingQueries <= 1
-  const percentage = (limit.remainingQueries / limit.maxQueries) * 100
+  const isLow = remainingQueries <= 1
+  const percentage = (remainingQueries / maxQueries) * 100
 
   return (
     <div
@@ -68,7 +35,7 @@ export function QueryLimitIndicator() {
           className="font-medium"
           style={{ color: isLow ? 'var(--page-error)' : 'var(--page-primary)' }}
         >
-          {limit.remainingQueries}/{limit.maxQueries}
+          {remainingQueries}/{maxQueries}
         </span>
         <span style={{ color: isLow ? 'var(--page-error)' : 'var(--page-text-muted)' }}>
           queries
@@ -91,13 +58,13 @@ export function QueryLimitIndicator() {
         />
       </div>
 
-      {limit.resetTime && limit.remainingQueries < limit.maxQueries && (
+      {resetTime && remainingQueries < maxQueries && (
         <span
           className="flex items-center gap-1.5 text-[13px]"
           style={{ color: 'var(--page-text-muted)' }}
         >
           <Clock className="w-3.5 h-3.5" />
-          {formatResetTime(limit.resetTime)}
+          {formatResetTime(resetTime)}
         </span>
       )}
     </div>
