@@ -39,6 +39,7 @@ build/
 .env
 .env.*
 !.env.example
+!.env.docker.example
 
 # Data & Database
 *.sqlite3
@@ -62,6 +63,15 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# AI Assistant files (local development aids)
+**/CLAUDE.md
+.claude/
+frontend/.claude/
+
+# Internal planning documents
+Next_Steps.md
+Next_Steps_Progress.md
 
 # Build outputs
 *.tsbuildinfo

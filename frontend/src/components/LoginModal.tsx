@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Mail, KeyRound, Loader2, AlertCircle } from 'lucide-react'
+import { X, Mail, KeyRound, Loader2, AlertCircle, Sparkles, ArrowRight } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 interface LoginModalProps {
@@ -95,45 +95,56 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
           <X className="w-5 h-5" />
         </button>
 
-        <div className="text-center mb-6">
+        {/* Header with gradient icon */}
+        <div className="text-center mb-8">
+          <div
+            className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, var(--page-primary) 0%, var(--page-accent) 100%)' }}
+          >
+            {step === 'email' ? (
+              <Sparkles className="w-8 h-8 text-white" />
+            ) : (
+              <KeyRound className="w-8 h-8 text-white" />
+            )}
+          </div>
           <h2
-            className="text-xl font-semibold mb-2"
+            className="text-2xl font-bold mb-2"
             style={{ color: 'var(--page-text)' }}
           >
-            {step === 'email' ? 'Sign in to PickMyElective' : 'Enter verification code'}
+            {step === 'email' ? 'Welcome Back' : 'Check Your Email'}
           </h2>
           <p style={{ color: 'var(--page-text-muted)' }}>
             {step === 'email'
-              ? 'Use your SFU email to get started'
+              ? 'Sign in with your SFU email'
               : `We sent a code to ${email}`}
           </p>
         </div>
 
         {error && (
           <div
-            className="mb-4 p-3 rounded-lg flex items-center gap-2 text-sm"
+            className="mb-6 p-4 rounded-xl flex items-center gap-3"
             style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              color: '#ef4444',
+              backgroundColor: 'var(--page-error-light)',
+              border: '1px solid var(--page-error)',
             }}
           >
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {error}
+            <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--page-error)' }} />
+            <span className="text-sm" style={{ color: 'var(--page-error)' }}>{error}</span>
           </div>
         )}
 
         {step === 'email' ? (
           <form onSubmit={handleEmailSubmit}>
-            <div className="mb-4">
+            <div className="mb-6">
               <label
                 className="block text-sm font-medium mb-2"
                 style={{ color: 'var(--page-text)' }}
               >
-                Email
+                Email address
               </label>
               <div className="relative">
                 <Mail
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
                   style={{ color: 'var(--page-text-muted)' }}
                 />
                 <input
@@ -141,20 +152,29 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="yourname@sfu.ca"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border transition-all duration-200 focus:outline-none focus:border-[var(--page-primary)] focus:ring-2 focus:ring-[var(--page-primary)]/10"
+                  className="w-full pl-12 pr-4 py-4 rounded-xl border transition-all duration-200 focus:outline-none"
                   style={{
                     backgroundColor: 'var(--page-surface)',
                     borderColor: 'var(--page-border)',
                     color: 'var(--page-text)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--page-primary)'
+                    e.currentTarget.style.boxShadow = '0 0 0 4px var(--page-primary-light)'
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--page-border)'
+                    e.currentTarget.style.boxShadow = 'none'
                   }}
                   disabled={isLoading}
                   required
                 />
               </div>
               <p
-                className="mt-1 text-xs"
+                className="mt-2.5 text-[13px] flex items-center gap-1.5"
                 style={{ color: 'var(--page-text-muted)' }}
               >
+                <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--page-success)' }} />
                 Only @sfu.ca emails are allowed
               </p>
             </div>
@@ -162,11 +182,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
             <button
               type="submit"
               disabled={isLoading || !email}
-              className="w-full py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110"
-              style={{
-                backgroundColor: 'var(--page-primary)',
-                color: 'white',
-              }}
+              className="btn-primary w-full py-4 font-medium flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -174,13 +190,16 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                   Sending code...
                 </>
               ) : (
-                'Send verification code'
+                <>
+                  Continue
+                  <ArrowRight className="w-5 h-5" />
+                </>
               )}
             </button>
           </form>
         ) : (
           <form onSubmit={handleOtpSubmit}>
-            <div className="mb-4">
+            <div className="mb-6">
               <label
                 className="block text-sm font-medium mb-2"
                 style={{ color: 'var(--page-text)' }}
@@ -189,7 +208,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
               </label>
               <div className="relative">
                 <KeyRound
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
                   style={{ color: 'var(--page-text-muted)' }}
                 />
                 <input
@@ -197,11 +216,19 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border transition-all duration-200 focus:outline-none focus:border-[var(--page-primary)] focus:ring-2 focus:ring-[var(--page-primary)]/10 text-center text-lg tracking-widest font-mono"
+                  className="w-full pl-12 pr-4 py-4 rounded-xl border transition-all duration-200 focus:outline-none text-center text-2xl tracking-[0.5em] font-mono"
                   style={{
                     backgroundColor: 'var(--page-surface)',
                     borderColor: 'var(--page-border)',
                     color: 'var(--page-text)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--page-primary)'
+                    e.currentTarget.style.boxShadow = '0 0 0 4px var(--page-primary-light)'
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--page-border)'
+                    e.currentTarget.style.boxShadow = 'none'
                   }}
                   disabled={isLoading}
                   maxLength={6}
@@ -210,7 +237,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                 />
               </div>
               <p
-                className="mt-1 text-xs"
+                className="mt-2.5 text-[13px]"
                 style={{ color: 'var(--page-text-muted)' }}
               >
                 The code expires in 10 minutes
@@ -220,11 +247,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
             <button
               type="submit"
               disabled={isLoading || otp.length !== 6}
-              className="w-full py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110"
-              style={{
-                backgroundColor: 'var(--page-primary)',
-                color: 'white',
-              }}
+              className="btn-primary w-full py-4 font-medium flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -232,15 +255,26 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                   Verifying...
                 </>
               ) : (
-                'Verify and sign in'
+                <>
+                  Verify & Sign In
+                  <ArrowRight className="w-5 h-5" />
+                </>
               )}
             </button>
 
             <button
               type="button"
               onClick={handleBackToEmail}
-              className="w-full mt-3 py-2 text-sm transition-colors hover:underline"
+              className="w-full mt-4 py-3 text-sm font-medium rounded-xl transition-all duration-200"
               style={{ color: 'var(--page-text-muted)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--page-surface-hover)'
+                e.currentTarget.style.color = 'var(--page-text)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = 'var(--page-text-muted)'
+              }}
               disabled={isLoading}
             >
               Use a different email

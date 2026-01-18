@@ -1,0 +1,44 @@
+# Build output
+target/
+
+# IDE
+.vscode
+.idea
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+
+# Environment files
+.env
+.env.local
+*.env
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+*.md
+
+# Test files
+*.test
+
+# Claude
+CLAUDE.md
+.claude

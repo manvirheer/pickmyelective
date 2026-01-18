@@ -1,4 +1,4 @@
-import { Search, Loader2 } from 'lucide-react'
+import { Search, Loader2, ArrowRight, Sparkles } from 'lucide-react'
 
 interface SearchBarProps {
   onSearch: (query: string) => void
@@ -8,9 +8,9 @@ interface SearchBarProps {
 }
 
 const SUGGESTION_TAGS = [
-  'I am interested in illness and body relation',
-  'Looking for cool history courses related to Europe',
-  'Interested in learning some coding for first time',
+  { text: 'Illness and body relation', icon: '🧬' },
+  { text: 'European history courses', icon: '🏛️' },
+  { text: 'Intro to coding', icon: '💻' },
 ]
 
 export function SearchBar({ onSearch, isLoading, query, onQueryChange }: SearchBarProps) {
@@ -28,61 +28,78 @@ export function SearchBar({ onSearch, isLoading, query, onQueryChange }: SearchB
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      <div className="flex items-stretch search-glow rounded-lg">
-        <input
-          type="text"
-          className="flex-1 px-4 py-3.5 text-base rounded-l-lg border-y border-l transition-all duration-200 focus:outline-none focus:border-[var(--page-primary)] focus:ring-2 focus:ring-[var(--page-primary)]/10"
+      <div className="search-glow relative">
+        {/* Input container with integrated button */}
+        <div
+          className="flex items-stretch rounded-2xl overflow-hidden"
           style={{
+            border: '1px solid var(--page-border)',
             backgroundColor: 'var(--page-surface)',
-            borderColor: 'var(--page-border)',
-            color: 'var(--page-text)',
           }}
-          placeholder="Describe your ideal course..."
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          disabled={isLoading}
-          minLength={3}
-          maxLength={500}
-        />
-        <button
-          className="px-5 py-3.5 font-medium rounded-r-lg transition-all duration-200 flex items-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:brightness-95"
-          style={{
-            backgroundColor: 'var(--page-primary)',
-            color: 'white',
-          }}
-          type="submit"
-          disabled={isLoading || query.trim().length < 3}
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Searching...</span>
-            </>
-          ) : (
-            <>
-              <Search className="w-5 h-5" />
-              <span>Find Courses</span>
-            </>
-          )}
-        </button>
+          {/* Search icon */}
+          <div className="flex items-center pl-4">
+            <Search
+              className="w-5 h-5"
+              style={{ color: 'var(--page-text-muted)' }}
+            />
+          </div>
+
+          {/* Input */}
+          <input
+            type="text"
+            className="flex-1 px-4 py-4 text-base bg-transparent border-none outline-none transition-all duration-200"
+            style={{
+              color: 'var(--page-text)',
+            }}
+            placeholder="Describe your ideal course..."
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            disabled={isLoading}
+            minLength={3}
+            maxLength={500}
+          />
+
+          {/* Submit button */}
+          <button
+            className="btn-primary m-1.5 px-5 py-3 font-medium flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
+            type="submit"
+            disabled={isLoading || query.trim().length < 3}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="hidden sm:inline">Searching...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5" />
+                <span className="hidden sm:inline">Find Courses</span>
+                <ArrowRight className="w-4 h-4 sm:hidden" />
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Clickable suggestion tags */}
-      <div className="mt-3 flex flex-wrap gap-2">
+      {/* Suggestion tags with better styling */}
+      <div className="mt-4 flex flex-wrap gap-2 justify-center">
+        <span
+          className="text-[14px] mr-2"
+          style={{ color: 'var(--page-text-muted)' }}
+        >
+          Try:
+        </span>
         {SUGGESTION_TAGS.map((tag) => (
           <button
-            key={tag}
+            key={tag.text}
             type="button"
-            onClick={() => handleTagClick(tag)}
-            className="text-sm px-3 py-1 rounded-full border transition-all duration-200 hover:border-[var(--page-primary)] hover:text-[var(--page-primary)]"
-            style={{
-              borderColor: 'var(--page-border)',
-              color: 'var(--page-text-muted)',
-              backgroundColor: 'var(--page-surface)',
-            }}
+            onClick={() => handleTagClick(tag.text)}
+            className="suggestion-tag flex items-center gap-1.5"
             disabled={isLoading}
           >
-            {tag}
+            <span>{tag.icon}</span>
+            <span>{tag.text}</span>
           </button>
         ))}
       </div>

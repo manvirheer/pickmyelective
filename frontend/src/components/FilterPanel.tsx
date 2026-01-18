@@ -1,4 +1,4 @@
-import { RotateCcw, CheckCircle, Wifi } from 'lucide-react'
+import { RotateCcw, CheckCircle, Wifi, SlidersHorizontal } from 'lucide-react'
 import type { QueryFilters } from '@/types'
 
 interface FilterPanelProps {
@@ -68,18 +68,34 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
     <div className="bento-card-static">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h3
-          className="font-semibold text-lg"
-          style={{ color: 'var(--page-text)' }}
-        >
-          Filters
-        </h3>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ backgroundColor: 'var(--page-primary-light)' }}
+          >
+            <SlidersHorizontal className="w-4 h-4" style={{ color: 'var(--page-primary)' }} />
+          </div>
+          <h3
+            className="font-semibold text-base"
+            style={{ color: 'var(--page-text)' }}
+          >
+            Filters
+          </h3>
+        </div>
         {hasActiveFilters && (
           <button
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-2 rounded-lg transition-all duration-200"
             style={{ color: 'var(--page-text-muted)' }}
             onClick={clearFilters}
             title="Reset filters"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--page-error-light)'
+              e.currentTarget.style.color = 'var(--page-error)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent'
+              e.currentTarget.style.color = 'var(--page-text-muted)'
+            }}
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -113,7 +129,7 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
           ))}
         </div>
         <p
-          className="text-xs mt-2"
+          className="text-[13px] mt-2.5 leading-relaxed"
           style={{ color: 'var(--page-text-muted)' }}
         >
           Select max course level
@@ -135,7 +151,7 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
       </FilterSection>
 
       {/* Options Section */}
-      <FilterSection title="Options">
+      <FilterSection title="Quick Filters" isLast>
         <div className="space-y-2">
           <button
             className={`toggle-pill highlight w-full justify-start gap-2 ${filters.no_prerequisites ? 'active' : ''}`}
@@ -158,11 +174,11 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
 }
 
 // Helper components
-function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
+function FilterSection({ title, children, isLast = false }: { title: string; children: React.ReactNode; isLast?: boolean }) {
   return (
-    <div className="mb-5">
+    <div className={isLast ? '' : 'mb-5 pb-5 border-b'} style={{ borderColor: 'var(--page-border)' }}>
       <label
-        className="block font-medium text-sm mb-3"
+        className="block font-semibold text-[15px] mb-3"
         style={{ color: 'var(--page-text)' }}
       >
         {title}
