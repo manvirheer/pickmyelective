@@ -1,4 +1,5 @@
-import { Sun, Moon, LogIn, LogOut, Sparkles } from 'lucide-react'
+import { Sun, Moon, LogIn, LogOut } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 
@@ -12,106 +13,122 @@ export function Header({ onLoginClick, onLogoClick }: HeaderProps) {
   const { user, isAuthenticated, logout } = useAuth()
 
   return (
-    <header className="glass-header sticky top-0 z-50 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-        {/* Logo */}
-        <button
+    <header className="glass-header sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        {/* Logo - minimal, clean */}
+        <motion.button
           onClick={onLogoClick}
-          className="group flex items-center gap-2 font-bold text-xl tracking-tight transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+          className="flex items-center gap-1.5"
+          whileHover={{ opacity: 0.7 }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ duration: 0.1 }}
         >
-          <div className="relative">
-            <Sparkles
-              className="w-6 h-6 transition-transform duration-300 group-hover:rotate-12"
-              style={{ color: 'var(--page-primary)' }}
-            />
-          </div>
-          <span className="text-gradient">Pick</span>
-          <span style={{ color: 'var(--page-text)' }}>My</span>
-          <span className="text-gradient">Elective</span>
-        </button>
+          <span
+            className="font-semibold text-[15px] tracking-tight"
+            style={{ color: 'var(--page-text)' }}
+          >
+            PickMyElective
+          </span>
+        </motion.button>
 
         {/* Right side controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {/* Auth controls */}
-          {isAuthenticated ? (
-            <div className="flex items-center gap-2">
-              <div
-                className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-200"
-                style={{
-                  backgroundColor: 'var(--page-surface-hover)',
-                  color: 'var(--page-text-muted)',
-                  border: '1px solid var(--page-border)',
-                }}
+          <AnimatePresence mode="wait">
+            {isAuthenticated ? (
+              <motion.div
+                key="authenticated"
+                className="flex items-center gap-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
               >
+                {/* User indicator */}
                 <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-                  style={{
-                    background: 'linear-gradient(135deg, var(--page-primary) 0%, var(--page-accent) 100%)',
-                    color: 'white',
-                  }}
+                  className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[13px]"
+                  style={{ color: 'var(--page-text-muted)' }}
                 >
-                  {user?.email?.charAt(0).toUpperCase()}
+                  <div
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-medium"
+                    style={{
+                      backgroundColor: 'var(--page-primary-subtle)',
+                      color: 'var(--page-primary)',
+                    }}
+                  >
+                    {user?.email?.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="max-w-[120px] truncate">{user?.email}</span>
                 </div>
-                <span className="max-w-[150px] truncate">{user?.email}</span>
-              </div>
-              <button
-                onClick={logout}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all duration-200"
-                style={{
-                  border: '1px solid var(--page-border)',
-                  color: 'var(--page-text-muted)',
-                  backgroundColor: 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--page-error)'
-                  e.currentTarget.style.color = 'var(--page-error)'
-                  e.currentTarget.style.backgroundColor = 'var(--page-error-light)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--page-border)'
-                  e.currentTarget.style.color = 'var(--page-text-muted)'
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }}
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={onLoginClick}
-              className="btn-primary flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
-            >
-              <LogIn className="w-4 h-4" />
-              <span>Sign In</span>
-            </button>
-          )}
 
-          {/* Theme Toggle */}
-          <button
+                {/* Logout button */}
+                <motion.button
+                  onClick={logout}
+                  className="btn-ghost flex items-center gap-1.5 text-[13px]"
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.1 }}
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Sign out</span>
+                </motion.button>
+              </motion.div>
+            ) : (
+              <motion.button
+                key="login"
+                onClick={onLoginClick}
+                className="btn-primary flex items-center gap-1.5 px-3 py-1.5 text-[13px]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.1 }}
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign in</span>
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {/* Divider */}
+          <div
+            className="w-px h-4 mx-1"
+            style={{ backgroundColor: 'var(--page-border)' }}
+          />
+
+          {/* Theme Toggle - minimal */}
+          <motion.button
             onClick={toggleTheme}
-            className="p-2.5 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-            style={{
-              border: '1px solid var(--page-border)',
-              backgroundColor: 'var(--page-surface)',
-              color: 'var(--page-text)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--page-primary)'
-              e.currentTarget.style.backgroundColor = 'var(--page-primary-light)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--page-border)'
-              e.currentTarget.style.backgroundColor = 'var(--page-surface)'
-            }}
+            className="p-2 rounded-md"
+            style={{ color: 'var(--page-text-muted)' }}
+            whileHover={{ color: 'var(--page-text)' }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.1 }}
             aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
-            {theme === 'light' ? (
-              <Moon className="w-5 h-5" />
-            ) : (
-              <Sun className="w-5 h-5" />
-            )}
-          </button>
+            <AnimatePresence mode="wait" initial={false}>
+              {theme === 'light' ? (
+                <motion.div
+                  key="moon"
+                  initial={{ opacity: 0, rotate: -90 }}
+                  animate={{ opacity: 1, rotate: 0 }}
+                  exit={{ opacity: 0, rotate: 90 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <Moon className="w-4 h-4" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="sun"
+                  initial={{ opacity: 0, rotate: 90 }}
+                  animate={{ opacity: 1, rotate: 0 }}
+                  exit={{ opacity: 0, rotate: -90 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <Sun className="w-4 h-4" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
         </div>
       </div>
     </header>

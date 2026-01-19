@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import geminiIcon from '@/assets/Google_Gemini_icon_2025.svg.png'
@@ -9,8 +10,20 @@ import { QueryHistory } from '@/components/QueryHistory'
 import { getRecommendations } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
 import { useQueryLimit } from '@/context/QueryLimitContext'
-import { Search, GraduationCap, Loader2, AlertCircle, MessageSquare, Sparkles, Zap } from 'lucide-react'
+import { Search, GraduationCap, Loader2, AlertCircle, Sparkles } from 'lucide-react'
 import type { QueryFilters, CourseResult } from '@/types'
+
+// Animation variants for staggered list
+const listContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.06,
+      delayChildren: 0.05,
+    },
+  },
+}
 
 function App() {
   const [filters, setFilters] = useState<QueryFilters>({})
@@ -115,35 +128,50 @@ function App() {
         onSuccess={handleLoginSuccess}
       />
 
-      {/* Glass Header */}
+      {/* Header */}
       <Header
         onLoginClick={() => setIsLoginModalOpen(true)}
         onLogoClick={handleLogoClick}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 blurred-bg-section">
-        <div className="blurred-bg-content py-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      {/* Main Content */}
+      <main className="flex-1">
+        <div className="py-6 sm:py-8">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
             {/* Hero Section */}
-            <div className="text-center mb-10 animate-fadeIn">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6" style={{ backgroundColor: 'var(--page-primary-light)' }}>
-                <Sparkles className="w-4 h-4" style={{ color: 'var(--page-primary)' }} />
-                <span className="text-[14px] font-medium" style={{ color: 'var(--page-primary)' }}>AI-Powered Course Discovery</span>
-              </div>
-              <h1 className="hero-title text-4xl md:text-5xl lg:text-6xl text-white mb-4 drop-shadow-lg">
-                Find Your Perfect{' '}
-                <span className="text-gradient">Elective</span>
-              </h1>
-              <p className="hero-subtitle text-lg md:text-xl text-white/90 max-w-2xl mx-auto" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
-                Discover courses that match your interests using natural language search powered by AI
-              </p>
-            </div>
+            <div className="hero-panel">
+              <motion.div
+                className="text-center mb-6"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <motion.h1
+                  className="hero-title mb-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  Find Your Perfect Elective
+                </motion.h1>
+                <motion.p
+                  className="hero-subtitle max-w-3xl mx-auto text-lg sm:text-xl font-medium"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.15 }}
+                >
+                  Describe what you're looking for and let AI find the best matches
+                </motion.p>
+              </motion.div>
 
-            {/* Search Box */}
-            <div className="max-w-4xl mx-auto mb-10">
-              <div className="bento-card-static relative animate-slideUp" style={{ animationDelay: '0.1s' }}>
-                <div className="flex items-center justify-between mb-4">
+              {/* Search Box */}
+              <motion.div
+                className="max-w-3xl mx-auto"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.3 }}
+              >
+                <div className="mb-3">
                   <QueryLimitIndicator />
                 </div>
                 <SearchBar
@@ -152,160 +180,219 @@ function App() {
                   query={searchQuery}
                   onQueryChange={setSearchQuery}
                 />
-                {/* Powered by Gemini badge */}
-                <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t" style={{ borderColor: 'var(--page-border)' }}>
-                  <span className="text-[13px]" style={{ color: 'var(--page-text-muted)' }}>
+                {/* Powered by Gemini */}
+                <div className="flex items-center justify-center gap-1.5 mt-4">
+                  <span className="text-sm font-medium" style={{ color: 'var(--page-text)' }}>
                     Powered by
                   </span>
-                  <img
-                    src={geminiIcon}
-                    alt="Gemini"
-                    className="w-4 h-4"
-                  />
-                  <span className="text-[13px] font-medium" style={{ color: 'var(--page-text-muted)' }}>
+                  <img src={geminiIcon} alt="" className="w-4 h-4" />
+                  <span className="text-sm font-medium" style={{ color: 'var(--page-text)' }}>
                     Gemini
                   </span>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Filters Sidebar */}
-              <aside className="lg:col-span-1 space-y-4 animate-slideUp" style={{ animationDelay: '0.2s' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
+              {/* Sidebar */}
+              <motion.aside
+                className="lg:col-span-1 space-y-4"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.25, duration: 0.3 }}
+              >
                 <FilterPanel filters={filters} onChange={setFilters} />
                 <QueryHistory onQueryClick={handleHistoryQueryClick} />
-              </aside>
+              </motion.aside>
 
               {/* Results Area */}
               <section className="lg:col-span-3">
                 {/* Error State */}
-                {error && (
-                  <div
-                    className="bento-card-static mb-4 border-l-4 flex items-start gap-3 animate-fadeIn"
-                    style={{ borderLeftColor: 'var(--page-error)' }}
-                  >
-                    <div
-                      className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--page-error-light)' }}
+                <AnimatePresence mode="wait">
+                  {error && (
+                    <motion.div
+                      key="error"
+                      className="bento-card-static mb-4 flex items-start gap-3"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <AlertCircle
-                        className="w-5 h-5"
-                        style={{ color: 'var(--page-error)' }}
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium mb-1" style={{ color: 'var(--page-error)' }}>Something went wrong</p>
-                      <p className="text-sm" style={{ color: 'var(--page-text-muted)' }}>{error}</p>
-                    </div>
-                  </div>
-                )}
+                      <div
+                        className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: 'var(--page-error-subtle)' }}
+                      >
+                        <AlertCircle className="w-4 h-4" style={{ color: 'var(--page-error)' }} />
+                      </div>
+                      <div>
+                        <p className="text-[14px] font-medium mb-0.5" style={{ color: 'var(--page-text)' }}>
+                          Something went wrong
+                        </p>
+                        <p className="text-[13px]" style={{ color: 'var(--page-text-muted)' }}>
+                          {error}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Query Interpretation */}
-                {interpretation && !error && (
-                  <div
-                    className="bento-card-static mb-4 border-l-4 flex items-start gap-3 animate-fadeIn"
-                    style={{ borderLeftColor: 'var(--page-primary)' }}
-                  >
-                    <div
-                      className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--page-primary-light)' }}
+                <AnimatePresence mode="wait">
+                  {interpretation && !error && (
+                    <motion.div
+                      key="interpretation"
+                      className="bento-card-static mb-4 flex items-start gap-3"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <MessageSquare
-                        className="w-5 h-5"
-                        style={{ color: 'var(--page-primary)' }}
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium mb-1" style={{ color: 'var(--page-text)' }}>Understanding your request</p>
-                      <p className="text-sm" style={{ color: 'var(--page-text-muted)' }}>{interpretation}</p>
-                    </div>
-                  </div>
-                )}
+                      <div
+                        className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: 'var(--page-primary-subtle)' }}
+                      >
+                        <Sparkles className="w-4 h-4" style={{ color: 'var(--page-primary)' }} />
+                      </div>
+                      <div>
+                        <p className="text-[14px] font-medium mb-0.5" style={{ color: 'var(--page-text)' }}>
+                          Understanding your search
+                        </p>
+                        <p className="text-[13px]" style={{ color: 'var(--page-text-muted)' }}>
+                          {interpretation}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Loading State */}
-                {isLoading && (
-                  <div className="bento-card-static text-center py-16 animate-fadeIn">
-                    <div
-                      className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                      style={{ background: 'linear-gradient(135deg, var(--page-primary) 0%, var(--page-accent) 100%)' }}
+                <AnimatePresence mode="wait">
+                  {isLoading && (
+                    <motion.div
+                      key="loading"
+                      className="bento-card-static text-center py-12"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <Loader2 className="w-8 h-8 text-white animate-spin" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--page-text)' }}>
-                      Finding perfect courses...
-                    </h3>
-                    <p style={{ color: 'var(--page-text-muted)' }}>
-                      Our AI is analyzing your request
-                    </p>
-                  </div>
-                )}
+                      <div className="flex flex-col items-center">
+                        <Loader2
+                          className="w-8 h-8 animate-spin mb-3"
+                          style={{ color: 'var(--page-primary)' }}
+                        />
+                        <p className="text-[14px] font-medium" style={{ color: 'var(--page-text)' }}>
+                          Finding courses...
+                        </p>
+                        <p className="text-[13px]" style={{ color: 'var(--page-text-muted)' }}>
+                          Analyzing your request
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Results */}
-                {!isLoading && courses.length > 0 && (
-                  <div className="animate-fadeIn">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-semibold text-white drop-shadow flex items-center gap-2">
-                        <Zap className="w-5 h-5" style={{ color: 'var(--page-primary)' }} />
-                        Found {courses.length} matching course{courses.length !== 1 ? 's' : ''}
-                      </h2>
-                    </div>
-                    {courses.map((course, index) => (
-                      <CourseCard key={course.course_code} course={course} index={index} />
-                    ))}
-                  </div>
-                )}
+                <AnimatePresence mode="wait">
+                  {!isLoading && courses.length > 0 && (
+                    <motion.div
+                      key="results"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <p className="text-[14px] font-medium" style={{ color: 'var(--page-text)' }}>
+                          {courses.length} course{courses.length !== 1 ? 's' : ''} found
+                        </p>
+                      </div>
+                      <motion.div
+                        variants={listContainerVariants}
+                        initial="hidden"
+                        animate="visible"
+                      >
+                        {courses.map((course, index) => (
+                          <CourseCard key={course.course_code} course={course} index={index} />
+                        ))}
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Empty State */}
-                {!isLoading && hasSearched && courses.length === 0 && !error && (
-                  <div className="bento-card-static text-center py-16 animate-fadeIn">
-                    <div
-                      className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--page-surface-hover)' }}
+                <AnimatePresence mode="wait">
+                  {!isLoading && hasSearched && courses.length === 0 && !error && (
+                    <motion.div
+                      key="empty"
+                      className="bento-card-static text-center py-12"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <Search className="w-8 h-8" style={{ color: 'var(--page-text-muted)' }} />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--page-text)' }}>
-                      No courses found
-                    </h3>
-                    <p className="text-[15px] leading-relaxed" style={{ color: 'var(--page-text-muted)' }}>
-                      Try adjusting your search terms or removing some filters
-                    </p>
-                  </div>
-                )}
+                      <div
+                        className="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center"
+                        style={{ backgroundColor: 'var(--page-hover)' }}
+                      >
+                        <Search className="w-5 h-5" style={{ color: 'var(--page-text-muted)' }} />
+                      </div>
+                      <p className="text-[14px] font-medium mb-1" style={{ color: 'var(--page-text)' }}>
+                        No courses found
+                      </p>
+                      <p className="text-[13px]" style={{ color: 'var(--page-text-muted)' }}>
+                        Try adjusting your search or filters
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Initial State */}
                 {!hasSearched && (
-                  <div className="bento-card-static text-center py-16 animate-slideUp" style={{ animationDelay: '0.3s' }}>
+                  <motion.div
+                    className="bento-card-static text-center py-12"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.3 }}
+                  >
                     <div
-                      className="w-20 h-20 rounded-2xl mx-auto mb-6 flex items-center justify-center"
-                      style={{ background: 'linear-gradient(135deg, var(--page-primary) 0%, var(--page-accent) 100%)' }}
+                      className="w-14 h-14 rounded-xl mx-auto mb-4 flex items-center justify-center"
+                      style={{ backgroundColor: 'var(--page-primary-subtle)' }}
                     >
-                      <GraduationCap className="w-10 h-10 text-white" />
+                      <GraduationCap className="w-7 h-7" style={{ color: 'var(--page-primary)' }} />
                     </div>
-                    <h3 className="text-xl font-semibold mb-3" style={{ color: 'var(--page-text)' }}>
-                      Ready to discover your perfect elective?
-                    </h3>
-                    <p className="mb-6 max-w-md mx-auto" style={{ color: 'var(--page-text-muted)' }}>
-                      Describe what you're looking for in natural language. Our AI will understand your needs and find courses that match your interests.
+                    <p className="text-[15px] font-medium mb-1" style={{ color: 'var(--page-text)' }}>
+                      Ready to explore?
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto">
+                    <p className="text-[13px] mb-6 max-w-sm mx-auto" style={{ color: 'var(--page-text-muted)' }}>
+                      Describe your ideal course using natural language
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-2">
                       {[
-                        { icon: '🧠', text: 'Psychology without prerequisites' },
-                        { icon: '🤖', text: 'AI and machine learning' },
-                        { icon: '✍️', text: 'Writing intensive humanities' },
+                        'Psychology without prerequisites',
+                        'AI and machine learning',
+                        'Writing intensive humanities',
                       ].map((example) => (
-                        <button
-                          key={example.text}
-                          onClick={() => setSearchQuery(example.text)}
-                          className="suggestion-tag text-left p-3 flex items-start gap-2"
+                        <motion.button
+                          key={example}
+                          onClick={() => setSearchQuery(example)}
+                          className="text-sm font-medium px-4 py-2 rounded-md"
+                          style={{
+                            backgroundColor: 'var(--page-hover)',
+                            color: 'var(--page-text)',
+                          }}
+                          whileHover={{
+                            backgroundColor: 'var(--page-active)',
+                          }}
+                          whileTap={{ scale: 0.98 }}
+                          transition={{ duration: 0.1 }}
                         >
-                          <span className="text-lg">{example.icon}</span>
-                          <span className="text-[13px] leading-snug">{example.text}</span>
-                        </button>
+                          {example}
+                        </motion.button>
                       ))}
                     </div>
-                  </div>
+                  </motion.div>
                 )}
               </section>
             </div>

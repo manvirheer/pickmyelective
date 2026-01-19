@@ -1,4 +1,5 @@
-import { RotateCcw, CheckCircle, Wifi, SlidersHorizontal } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { RotateCcw, CheckCircle, Wifi, SlidersHorizontal, Check } from 'lucide-react'
 import type { QueryFilters } from '@/types'
 
 interface FilterPanelProps {
@@ -40,7 +41,6 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
   }
 
   const handleLevelToggle = (level: number) => {
-    // Toggle: if already selected, deselect; otherwise select
     const isActive = filters.max_level === level
     onChange({ ...filters, max_level: isActive ? undefined : level })
   }
@@ -67,16 +67,23 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
     filters.online_only
 
   return (
-    <div className="bento-card-static">
+    <motion.div
+      className="bento-card-static"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+    >
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
-          <div
+          <motion.div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: 'var(--page-primary-light)' }}
+            whileHover={{ scale: 1.05, rotate: 10 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
           >
             <SlidersHorizontal className="w-4 h-4" style={{ color: 'var(--page-primary)' }} />
-          </div>
+          </motion.div>
           <h3
             className="font-semibold text-base"
             style={{ color: 'var(--page-text)' }}
@@ -84,35 +91,40 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
             Filters
           </h3>
         </div>
-        {hasActiveFilters && (
-          <button
-            className="p-2 rounded-lg transition-all duration-200"
-            style={{ color: 'var(--page-text-muted)' }}
-            onClick={clearFilters}
-            title="Reset filters"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--page-error-light)'
-              e.currentTarget.style.color = 'var(--page-error)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-              e.currentTarget.style.color = 'var(--page-text-muted)'
-            }}
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-        )}
+        <AnimatePresence>
+          {hasActiveFilters && (
+            <motion.button
+              className="p-2 rounded-lg"
+              style={{ color: 'var(--page-text-muted)' }}
+              onClick={clearFilters}
+              title="Reset filters"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              whileHover={{
+                backgroundColor: 'var(--page-error-light)',
+                color: 'var(--page-error)',
+                rotate: -180,
+              }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+            >
+              <RotateCcw className="w-4 h-4" />
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Campus */}
       <FilterSection title="Campus">
         <div className="pill-group">
-          {CAMPUSES.map((campus) => (
+          {CAMPUSES.map((campus, i) => (
             <TogglePill
               key={campus}
               label={campus}
               active={filters.campus?.includes(campus) || false}
               onClick={() => handleCampusToggle(campus)}
+              delay={i * 0.03}
             />
           ))}
         </div>
@@ -121,12 +133,13 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
       {/* Course Level */}
       <FilterSection title="Course Level">
         <div className="pill-group">
-          {LEVELS.map(({ value, label }) => (
+          {LEVELS.map(({ value, label }, i) => (
             <TogglePill
               key={value}
               label={label}
               active={filters.max_level === value}
               onClick={() => handleLevelToggle(value)}
+              delay={i * 0.03}
             />
           ))}
         </div>
@@ -141,12 +154,13 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
       {/* WQB Designations */}
       <FilterSection title="Designations">
         <div className="pill-group">
-          {WQB_OPTIONS.map(({ value, label }) => (
+          {WQB_OPTIONS.map(({ value, label }, i) => (
             <TogglePill
               key={value}
               label={label}
               active={filters.wqb?.includes(value) || false}
               onClick={() => handleWqbToggle(value)}
+              delay={i * 0.03}
             />
           ))}
         </div>
@@ -155,30 +169,34 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
       {/* Options Section */}
       <FilterSection title="Quick Filters" isLast>
         <div className="space-y-2">
-          <button
-            className={`toggle-pill highlight w-full justify-start gap-2 ${filters.no_prerequisites ? 'active' : ''}`}
+          <QuickFilterButton
+            active={filters.no_prerequisites || false}
             onClick={handleNoPrereqToggle}
-          >
-            <CheckCircle className="w-4 h-4" />
-            <span>No prerequisites</span>
-          </button>
-          <button
-            className={`toggle-pill highlight w-full justify-start gap-2 ${filters.online_only ? 'active' : ''}`}
+            icon={<CheckCircle className="w-4 h-4" />}
+            label="No prerequisites"
+          />
+          <QuickFilterButton
+            active={filters.online_only || false}
             onClick={handleOnlineOnlyToggle}
-          >
-            <Wifi className="w-4 h-4" />
-            <span>Online only</span>
-          </button>
+            icon={<Wifi className="w-4 h-4" />}
+            label="Online only"
+          />
         </div>
       </FilterSection>
-    </div>
+    </motion.div>
   )
 }
 
 // Helper components
 function FilterSection({ title, children, isLast = false }: { title: string; children: React.ReactNode; isLast?: boolean }) {
   return (
-    <div className={isLast ? '' : 'mb-5 pb-5 border-b'} style={{ borderColor: 'var(--page-border)' }}>
+    <motion.div
+      className={isLast ? '' : 'mb-5 pb-5 border-b'}
+      style={{ borderColor: 'var(--page-border)' }}
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 }}
+    >
       <label
         className="block font-semibold text-[15px] mb-3"
         style={{ color: 'var(--page-text)' }}
@@ -186,7 +204,7 @@ function FilterSection({ title, children, isLast = false }: { title: string; chi
         {title}
       </label>
       {children}
-    </div>
+    </motion.div>
   )
 }
 
@@ -194,18 +212,83 @@ function TogglePill({
   label,
   active,
   onClick,
+  delay = 0,
 }: {
   label: string
   active: boolean
   onClick: () => void
+  delay?: number
 }) {
   return (
-    <button
+    <motion.button
       className={`toggle-pill ${active ? 'active' : ''}`}
       onClick={onClick}
       type="button"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay, type: 'spring', stiffness: 400, damping: 25 }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      layout
     >
+      <AnimatePresence mode="wait">
+        {active && (
+          <motion.span
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{ duration: 0.15 }}
+            className="mr-1"
+          >
+            <Check className="w-3 h-3 inline-block" />
+          </motion.span>
+        )}
+      </AnimatePresence>
       {label}
-    </button>
+    </motion.button>
+  )
+}
+
+function QuickFilterButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean
+  onClick: () => void
+  icon: React.ReactNode
+  label: string
+}) {
+  return (
+    <motion.button
+      className={`toggle-pill highlight w-full justify-start gap-2 ${active ? 'active' : ''}`}
+      onClick={onClick}
+      whileHover={{ scale: 1.02, x: 2 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+      layout
+    >
+      <motion.span
+        animate={{ rotate: active ? 360 : 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        {icon}
+      </motion.span>
+      <span>{label}</span>
+      <AnimatePresence>
+        {active && (
+          <motion.span
+            className="ml-auto"
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <Check className="w-4 h-4" />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </motion.button>
   )
 }
