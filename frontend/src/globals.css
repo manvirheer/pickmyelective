@@ -139,7 +139,7 @@
   --page-text-muted: #737373;
   --page-text-subtle: #A3A3A3;
   --hero-subtitle-color: #3B3B3B;
-  --hero-text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --hero-text-shadow: none;
 
   /* Primary - Deep indigo, refined */
   --page-primary: #5B5BD6;
